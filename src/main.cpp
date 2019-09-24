@@ -15,24 +15,12 @@
 #include "MyVector.h"
 #include "MyWorld.h"
 #include "DebugerManager.h"
+#include "GraphicsManager.h"
 
 #pragma comment(lib, "glfw3.lib")
 
 using namespace My;
 using namespace std;
-
-float vertices[] = {
-	//---- 位置 ----
-	2.0f, 2.0f, 0.0f,		// 右上角
-	2.0f, -0.5f, 0.0f,		// 右下角
-	-2.0f, -0.5f, 0.0f,		// 左下角
-	-2.0f, 2.0f, 0.0f,		// 左上角
-};
-
-unsigned int indices[] = {
-	0, 1, 3, // first triangle
-	1, 2, 3  // second triangle
-};
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -48,7 +36,7 @@ MyShader* ourShader;
 // Input Var
 //-----------------------------------
 // camera
-MyCamera camera(glm::vec3(0.0f, 0.0f, 25.0f));
+MyCamera camera(glm::vec3(0.0f, 0.0f, 18.0f));
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 bool firstMouse = true;
@@ -80,38 +68,39 @@ void InitShader()
 
 void InitWorld() 
 {
+	GraphicsManager::Init();
 	DebugerManager::Init();
-	
-	Rigidbody2D* body1 = world->CreateBox(glm::vec3(1.0f, 1.0f, 0.0f));
-	//Rigidbody2D* body1 = world->CreateBox(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(3.0f, 0.5f, 0.0f));
-	body1->SetName("body1");
+
+	//Rigidbody2D* body1 = world->CreateBox(glm::vec3(1.0f, 1.0f, 0.0f));
+	Rigidbody2D* body1 = world->CreateSphere(0.8);
+	body1->SetId(1);
+	body1->SetPosition(glm::vec3(3.0f, 7.0f, 0.0f));
 	body1->SetMass(1.0f);
 	body1->SetKinematic(false);
-	body1->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
 
-	Rigidbody2D* body2 = world->CreateBox(glm::vec3(3.0f, 0.5f, 0.0f));
-	body2->SetName("body2");
+	Rigidbody2D* body2 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
+	//Rigidbody2D* body2 = world->CreateSphere(5);
+	body2->SetId(2);
+	body2->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	body2->SetRotate(45);
 	body2->SetMass(1.0f);
 	body2->SetKinematic(true);
-	body2->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	/*{
-		auto collison = body2->GetCollisionShape();
-		collison->UpdateRotate(glm::vec3(0, 0, 45));
-	}*/
 
-	//DebugerManager::DrawLine(body1->GetCollisionShape()->transform()->position(), body2->GetCollisionShape()->transform()->position(), glm::vec3(0.5,0.5,0.5));
-	//DebugerManager::DrawPoint(body1->GetCollisionShape()->GetTransform()->GetLocalPosition(), glm::vec3(0.6, 0.2, 0.9));
+	//Rigidbody2D* body3 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
+	//body3->SetId(3);
+	//body3->SetPosition(glm::vec3(0.0f, -7.0f, 0.0f));
+	//body3->SetRotate(45);
+	//body3->SetMass(1.0f);
+	//body3->SetKinematic(true);
 }
 
-float auglar = 0.0f;
 void UpdateLogic() 
 {
 	if (world)
 	{
-		//DebugerManager::ClearDebugBuffers();
 		for (auto body : world->bodyList())
 		{
-			auto collision = body->GetCollisionShape();
+			auto collision = body->GetShape();
 			//修改颜色（标识是否碰撞）
 			if (body->isColliding)
 			{
@@ -119,16 +108,9 @@ void UpdateLogic()
 			}
 			else
 			{
-				collision->SetColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-			}
-
-			if (body->GetName() == "body1") 
-			{
-				//DebugerManager::DrawPoint(body->GetCollisionShape()->transform()->position(), DebugerManager::Color_Red);
-				//DebugerManager::DrawBound(body->GetCollisionShape(), DebugerManager::Color_Red);
+				collision->SetColor(glm::vec4(1.0f));
 			}
 		}
-		auglar = auglar + 1.0f;
 	}
 }
 
@@ -136,8 +118,9 @@ void Render()
 {
 	if (world) 
 	{
-		//model
-		glm::mat4 model = glm::mat4(1.0);
+		GraphicsManager::ClearBuffers();
+		DebugerManager::ClearDebugBuffers();
+
 		//view
 		glm::mat4 view = camera.GetViewMatrix();
 		//projection
@@ -146,9 +129,18 @@ void Render()
 
 		for (auto body : world->bodyList()) 
 		{
-			std::shared_ptr<MyGeometry> collison = body->GetCollisionShape();
-			collison->Draw(ourShader, view, projection);
+			body->Render(ourShader, view, projection);
+
+			if (body->GetId() == 1)
+			{
+				//glm::vec3 pos = body->transform()->GetWorldPos();
+				//DebugerManager::PrintVec3(pos, "WorldPos: ");
+				//DebugerManager::DrawPoint(pos, 5, DebugerManager::Color_Red);
+				DebugerManager::DrawBound(body, DebugerManager::Color_Red);
+			}
 		}
+
+		GraphicsManager::Render(ourShader, view, projection);
 
 		//Render Debug Info
 		DebugerManager::Draw(ourShader, view, projection);
@@ -274,11 +266,12 @@ void processInput(GLFWwindow *window)
 
 	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
 	{
+		printf("F!\n");
 		int i = 0;
 		for (auto body : world->bodyList())
 		{
-			body->ApplyImpulse(glm::vec3(0.0f, random(0, 7), 0.0f));
-			//body->ApplyTorque(glm::vec3(0,0,3));
+			//body->ApplyImpulse(glm::vec3(0.0f, random(0, 7), 0.0f));
+			body->ApplyTorque(glm::vec3(0, 0, 150));
 			i++;
 		}
 	}

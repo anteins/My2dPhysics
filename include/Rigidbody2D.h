@@ -3,8 +3,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "MyGeometry.h"
 #include <string>
+
+#include "MyGeometry.h"
+#include "MyQuaternion.h"
+#include "MyMotionState.h"
+#include "MyBox.h"
 
 using namespace std;
 
@@ -13,35 +17,78 @@ namespace My
 	class Rigidbody2D
 	{
 	public:
-		Rigidbody2D(std::shared_ptr<MyGeometry> collisionShape) : m_pCollisionShape(collisionShape)
+		Rigidbody2D(std::shared_ptr<MyGeometry> shape) : m_pCollisionShape(shape)
 		{
-			this->m_name = "";
-			this->_gravity = glm::vec3(0, -9.8f, 0);
-			this->linearDamping = 1.0f;
-			this->angularDamping = 1.0f;
+			this->m_id = 0;
+			this->m_gravity = glm::vec3(0, -9.8f, 0);
+			this->linearDamping = 0.4f;
+			this->angularDamping = 0.4f;
 			this->isColliding = false;
 			this->velocity = glm::vec3(0.0f);
-
 			this->angularAcceleration = glm::vec3(0.0f);
 			this->angularVelocity = glm::vec3(0.0f);
 			this->torque = glm::vec3(0.0f);
+
+			this->centerPos = glm::vec3(0.0f);
+			this->m_motionState = new MyMotionState();
+
+			this->m_pCollisionShape->InitShape(this->centerPos, this->m_motionState);
 		};
 
-		std::shared_ptr<MyGeometry> GetCollisionShape() { return m_pCollisionShape; }
+		glm::vec3 GetPosition() 
+		{
+			return this->posWorld;
+		}
 
 		void SetPosition(glm::vec3 position) 
-		{
-			m_pCollisionShape->UpdatePosition(position);
+		{ 
+			this->posWorld = position;
+			this->m_motionState->Translate(this->posWorld);
+			this->m_pCollisionShape->UpdateBound();
 		}
 
-		void SetName(const string name) 
+		void UpdatePosition(glm::vec3 posDelta)
 		{
-			this->m_name = name;
+			this->posWorld += posDelta;
+			this->m_motionState->Translate(posDelta);
+			this->m_pCollisionShape->UpdateBound();
 		}
 
-		const string GetName() 
+		void SetRotate(float angular)
 		{
-			return this->m_name;
+			this->m_motionState->Rotate(angular);
+			this->m_pCollisionShape->UpdateBound();
+		}
+
+		void UpdateRotate(float angular)
+		{
+			this->angular += angular;
+			this->m_motionState->Rotate(angular);
+			this->m_pCollisionShape->UpdateBound();
+		}
+
+		AabbBound GetAabbBound()
+		{
+			std::shared_ptr<MyBox> boxShape = std::static_pointer_cast<MyBox>(this->m_pCollisionShape);
+			if (boxShape) {
+				return boxShape->GetBound();
+			}
+		}
+
+		MyMotionState* transform() { return this->m_motionState; }
+
+
+		void SetVelocity(glm::vec3 velocity) { this->velocity = velocity; }
+
+		void SetId(unsigned int id) {this->m_id = id;}
+
+		const unsigned int GetId() { return this->m_id; }
+
+		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
+
+		void Render(MyShader* ourShader, glm::mat4& view, glm::mat4& projection)
+		{
+			this->m_pCollisionShape->Render(ourShader, this->transform()->GetMatrix(), view, projection);
 		}
 
 		void SetMass(float mass) 
@@ -64,27 +111,43 @@ namespace My
 		void CalcAllForce();
 		void Integrate(float dt);
 
-		float linearDamping;
-		float angularDamping;
+		void SetOrientation(const Quaternion &orientation);
+		void SetOrientation(const double r, const double i,
+			const double j, const double k);
+		void GetOrientation(Quaternion *orientation) const;
+
+		MyMotionState* m_motionState;
+
 		float mass;
 		float inv_mass;
+
+		float linearDamping;
+		float angularDamping;
+
 		float restitution;
 		bool isKinematic;
 		bool isColliding;
 
-		glm::vec3 force;
-		glm::vec3 velocity;
-		glm::vec3 acceleration;
+		glm::vec3 centerPos;
+		glm::vec3 posWorld;
 
+		glm::vec3 force;
+		glm::vec3 acceleration;
+		glm::vec3 velocity;
+
+
+		glm::vec3 torque;
 		glm::vec3 angularAcceleration;
 		glm::vec3 angularVelocity;
-		glm::vec3 torque;
+		float angular;
+
+		Quaternion orientation;
+		glm::vec3 rotation;
 
 	private:
-		string m_name;
-
+		unsigned int m_id;
 		std::shared_ptr<MyGeometry> m_pCollisionShape;
-		glm::vec3 _gravity;
+		glm::vec3 m_gravity;
 		~Rigidbody2D() {};
 	};
 }

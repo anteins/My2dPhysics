@@ -9,38 +9,34 @@ class MyMotionState
 {
 public:
 	MyMotionState():
-		m_translate(glm::mat4(1.0f)),
-		m_rotate(glm::mat4(1.0f)),
-		m_localPosition(glm::vec4(1.0f))
+		m_translateMat(glm::mat4(1.0f)),
+		m_rotateMat(glm::mat4(1.0f)),
+		m_localPosition(glm::vec4(0.0f)),
+		m_zAxis(glm::vec3(0.0, 0.0, 1.0f))
 	{}
 	
-	glm::vec4 position() { return m_localPosition + glm::column(m_translate, 3); }
-	glm::vec4 localPosition() {return m_localPosition;}
-
-
-
-	void SetLocalPosition(glm::vec4 position) { m_localPosition = position; }
+	glm::vec4 GetLocalPos() { return m_localPosition; }
+	glm::vec4 GetWorldPos() { return m_localPosition + glm::column(m_translateMat, 3); }
 	
-	void UpdateDelta(glm::vec3 posDelta)
+	//Æ½ÒÆ
+	void Translate(glm::vec3 posDelta)
 	{
-		this->m_translate = glm::translate(this->m_translate, posDelta);
+		this->m_translateMat = glm::translate(this->m_translateMat, posDelta);
 	}
 
-	void UpdateRotate(glm::vec3 angularDelta)
+	//Ðý×ª
+	void Rotate(float angular)
 	{
-		this->m_rotate = glm::rotate(this->m_rotate, glm::radians(angularDelta.z), glm::vec3(0.0, 0.0, 1.0f));
+		this->m_rotateMat = glm::rotate(this->m_rotateMat, glm::radians(angular), this->m_zAxis);
 	}
 
-	glm::mat4 GetTranslateMatrix() { return this->m_translate; }
-	glm::mat4 GetRotateMatrix() { return this->m_rotate; }
-	glm::mat4 GetModelMatrix() { return this->m_translate * this->m_rotate; }
+	glm::mat4 GetTranslateMatrix() { return this->m_translateMat; }
+	glm::mat4 GetRotateMatrix() { return this->m_rotateMat; }
+	glm::mat4 GetMatrix() { return this->m_translateMat * this->m_rotateMat; }
 
-	//glm::vec3 GetRotate();
-	//glm::vec3 SetRotate(glm::vec3 position);
-	//glm::vec3 GetScale();
 private:
-	glm::mat4 m_translate;
-	glm::mat4 m_rotate;
-
+	glm::mat4 m_translateMat;
+	glm::mat4 m_rotateMat;
 	glm::vec4 m_localPosition;
+	glm::vec3 m_zAxis;
 };

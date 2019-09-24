@@ -4,16 +4,18 @@
 
 //Debug Color Enum
 glm::vec3 DebugerManager::Color_White = glm::vec3(1.0f);
-glm::vec3 DebugerManager::Color_Red = glm::vec3(0.6, 0.2, 0.9);
+glm::vec3 DebugerManager::Color_Red = glm::vec3(1.0, 0.0, 0.0);
+glm::vec3 DebugerManager::Color_Green = glm::vec3(0.0, 1.0, 0.0);
+glm::vec3 DebugerManager::Color_Blue = glm::vec3(0.0, 0.0, 1.0);
+glm::vec3 DebugerManager::Color_Yellow = glm::vec3(1.0, 1.0, 0.0);
 
-vector<GLuint> DebugerManager::m_Buffers = vector<GLuint>();
-MyShader* DebugerManager::m_debugShaderProgram = nullptr;
 vector<DebugDrawBatchContext> DebugerManager::m_DebugDrawBatchContext = vector<DebugDrawBatchContext>();
+vector<DebugDrawBatchContext> DebugerManager::m_NoClearDebugDrawBatchContext = vector<DebugDrawBatchContext>();
 
-void DebugerManager::DrawBound(std::shared_ptr<MyGeometry> collisionShape, const glm::vec3& color) 
+void DebugerManager::DrawBound(Rigidbody2D* body, const glm::vec3& color)
 {
-	AabbBound bound = collisionShape->GetBound();
-	glm::mat4 transition = collisionShape->transform()->GetModelMatrix();
+	AabbBound bound = body->GetAabbBound();
+	glm::mat4 transform = body->transform()->GetMatrix();
 
 	GLfloat vertices[6];
 	vertices[0] = bound.min.x;
@@ -43,19 +45,17 @@ void DebugerManager::DrawBound(std::shared_ptr<MyGeometry> collisionShape, const
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-	AddBuffer(buffer_id);
-
 	DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
 	dbc.vao = vao;
 	dbc.mode = GL_POINTS;
 	dbc.count = 2;
-	dbc.pointSize = 5;
+	dbc.pointSize = 3;
 	dbc.color = color;
 
 	m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void DebugerManager::DrawPoint(glm::vec3 position, unsigned int size, const glm::vec3& color)
+void DebugerManager::DrawPoint(glm::vec3 position, const glm::vec3& color)
 {
 	GLfloat vertices[3];
 	vertices[0] = position.x;
@@ -81,16 +81,14 @@ void DebugerManager::DrawPoint(glm::vec3 position, unsigned int size, const glm:
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-	AddBuffer(buffer_id);
-
 	DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
 	dbc.vao = vao;
 	dbc.mode = GL_POINTS;
 	dbc.count = 1;
-	dbc.pointSize = size;
+	dbc.pointSize = 3;
 	dbc.color = color;
 
-	m_DebugDrawBatchContext.push_back(std::move(dbc));
+	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
 }
 
 void DebugerManager::DrawLine(const glm::vec3& to, const glm::vec3& from, const glm::vec3& color)
@@ -123,21 +121,24 @@ void DebugerManager::DrawLine(const glm::vec3& to, const glm::vec3& from, const 
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-	AddBuffer(buffer_id);
-
 	DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
 	dbc.vao = vao;
 	dbc.mode = GL_LINES;
 	dbc.count = 2;
 	dbc.color = color;
 
-	m_DebugDrawBatchContext.push_back(std::move(dbc));
+	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void DebugerManager::DrawVector3(const glm::vec3& to, const glm::vec3& from, const glm::vec3& color)
+void DebugerManager::DrawVector3(const glm::vec3& vec, const glm::vec3& color)
 {
-	DrawPoint(to, 3, color);
-	DrawLine(to, from, color);
+	//DrawPoint(to, 3, color);
+	DrawLine(glm::vec3(0.0f), vec, color);
+}
+
+void DebugerManager::DrawVector3(const glm::vec3& vec, Rigidbody2D* body, const glm::vec3& color)
+{
+	DrawLine(vec, body->transform()->GetWorldPos(), Color_Red);
 }
 
 void DebugerManager::Draw(MyShader* ourShader, glm::mat4 view, glm::mat4 projection)
@@ -161,9 +162,24 @@ void DebugerManager::Draw(MyShader* ourShader, glm::mat4 view, glm::mat4 project
 		glBindVertexArray(dbc.vao);
 		glDrawArrays(dbc.mode, 0x00, dbc.count); // 绘制调试信息
 	}
+
+	//Not Clear
+	for (auto dbc : m_NoClearDebugDrawBatchContext)
+	{
+		if (dbc.pointSize > 0)
+		{
+			glPointSize(dbc.pointSize);
+		}
+
+		/*PrintVec3("dbc.color: ", dbc.color);*/
+		ourShader->setVec4("vertexColor", glm::vec4(dbc.color, 1.0f));
+
+		glBindVertexArray(dbc.vao);
+		glDrawArrays(dbc.mode, 0x00, dbc.count); // 绘制调试信息
+	}
 }
 
-void DebugerManager::PrintVec3(const std::string& name, glm::vec3 vector)
+void DebugerManager::PrintVec3(glm::vec3 vector, const std::string& headMessage)
 {
-	printf("%s(%f, %f, %f)\n", name.c_str(), vector.x, vector.y, vector.z);
+	printf("%s(%f, %f, %f)\n", headMessage.c_str(), vector.x, vector.y, vector.z);
 }

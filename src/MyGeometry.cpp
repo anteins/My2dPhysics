@@ -7,51 +7,15 @@
 
 using namespace My;
 
-void MyGeometry::Draw(MyShader* ourShader, glm::mat4 view, glm::mat4 projection)
-{
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(this->vertices), this->vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(this->indices), this->indices, GL_STATIC_DRAW);
-
-	//model = glm::rotate(model, glm::radians(this->rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	//glm::mat4 rotate = this->transform()->GetRotateMatrix();
-	//glm::mat4 model = this->transform()->GetTranslateMatrix();
-
-	/*float time = glfwGetTime();
-	glm::mat4 trans = glm::mat4(1.0f);
-	trans = glm::translate(trans, glm::vec3(0.0f, 1.0f, 0.0f));
-	trans = glm::rotate(trans, time, glm::vec3(0.0, 0.0, 1.0));
-	trans = glm::scale(trans, glm::vec3(0.4f, 0.4f, 0.4f));
-*/
-	ourShader->setMat4("model", this->transform()->GetModelMatrix());
-	ourShader->setMat4("view", view);
-	ourShader->setMat4("projection", projection);
-	ourShader->setVec4("vertexColor", this->color);
-
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-}
-
 void MyGeometry::SetColor(glm::vec4 color)
 {
 	this->color = color;
 }
 
-void MyGeometry::UpdatePosition(glm::vec3 posDelta)
-{
-	this->m_motionState->UpdateDelta(posDelta);
-	this->UpdateBound();
-}
-
-void MyGeometry::UpdateRotate(glm::vec3 angularDelta)
-{
-	this->m_motionState->UpdateRotate(angularDelta);
-}
+//void MyGeometry::UpdateRotate(glm::vec3 angularDelta)
+//{
+//	this->m_motionState->UpdateRotate(angularDelta);
+//}
 
 void MyGeometry::CalculateTemporalAabb(const glm::mat4& curTrans,
 	const glm::vec3& linvel,

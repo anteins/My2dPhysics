@@ -4,22 +4,27 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "MyGeometry.h"
-
+#include "MyMotionState.h"
 
 class MyBox : public MyGeometry 
 {
 public:
 	MyBox() = delete;
-	MyBox(glm::vec3 centerPosition, glm::vec3 halfExtents): 
+	MyBox(glm::vec3 centerPosition,
+		glm::vec3 halfExtents):
 		MyGeometry(GeometryType::kBox), 
-		m_vHalfExtents(halfExtents)
-	{
-		this->m_motionState->SetLocalPosition(glm::vec4(centerPosition, 1.0f));
-		SetSize();
-	};
+		m_vHalfExtents(halfExtents),
+		m_direction(glm::vec4(0.0, 1.0, 0.0, 0.0)){};
 
+	//override
+	void InitShape(glm::vec3 centerPosition, MyMotionState* motionState);
 	void UpdateBound();
-	void SetSize();
+	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
+
+	AabbBound GetBound() { return m_aabbBound; }
+	float GetWidth() { return this->width; }
+	float GetHeight() { return this->height; }
+	glm::vec3 GetDirection() { return this->m_motionState->GetMatrix() *  this->m_direction;}
 
 	//3rd
 	void GetAabb(const glm::mat4& trans,
@@ -33,4 +38,13 @@ public:
 
 protected:
 	glm::vec3 m_vHalfExtents;
+
+	float width;
+	float height;
+
+	glm::vec4 m_direction;
+
+	AabbBound m_aabbBound;
+	glm::vec4 m_localMin;
+	glm::vec4 m_localMax;
 };

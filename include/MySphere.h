@@ -5,17 +5,19 @@
 
 #include "MyGeometry.h"
 
+const static float PI = 3.1415926f;
+const static double toPI = PI / 180.0;
+
 class MySphere : public MyGeometry 
 {
 public:
 	MySphere() = delete;
-	MySphere(glm::vec3 center, float radius) : MyGeometry(GeometryType::kSphere), m_fRadius(radius)
-	{
-		this->m_motionState->SetLocalPosition(glm::vec4(center, 1.0f));
-	};
+	MySphere(glm::vec3 centerPos, float radius) : MyGeometry(GeometryType::kSphere), m_fRadius(radius){};
 
-	void SetSize();
+	void InitShape(glm::vec3 centerPosition, MyMotionState* motionState);
 	void UpdateBound();
+	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
+
 	void GetAabb(const glm::mat4& trans,
 		glm::vec3& aabbMin,
 		glm::vec3& aabbMax) const final;
@@ -24,4 +26,5 @@ public:
 
 protected:
 	float m_fRadius;
+	//float vertices[421];
 };
