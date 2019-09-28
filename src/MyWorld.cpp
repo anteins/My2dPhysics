@@ -12,6 +12,7 @@ using namespace std;
 
 bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
 bool Collide_Sphere_Box(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
+bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
 void ResolveCollision(Rigidbody2D& rigA, Rigidbody2D& rigB, float dt);
 
 bool sortFun(Rigidbody2D* p1, Rigidbody2D* p2)
@@ -42,9 +43,10 @@ void MyWorld::Step(float dt)
 	for (auto body : bodyList())
 	{
 		body->Integrate(dt);
+		//DebugerManager::DrawVector3(body->velocity, body, DebugerManager::Color_Green);
 	}
 
-	ContactData contactData;
+	std::vector<ContactData> contactList;
 	for (size_t i = 0; i < bodyList().size(); ++i)
 	{
 		for (size_t j = i + 1; j < bodyList().size(); ++j) 
@@ -52,121 +54,104 @@ void MyWorld::Step(float dt)
 			Rigidbody2D* body1 = bodyList()[i];
 			Rigidbody2D* body2 = bodyList()[j];
 
+			ContactData contactData;
 			bool shouldCollide = this->Collide(body1, body2, contactData, dt);
 
 			body1->isColliding = shouldCollide;
-			//body2->isColliding = shouldCollide;
+			body2->isColliding = shouldCollide;
 
-			if (shouldCollide) 
+			if (shouldCollide)
 			{
-				if (!contactData.body[0])
-					return;
-
-				Rigidbody2D* body = contactData.body[0];
-
-				glm::vec3 relativeVelocity = body->velocity;
-				if (contactData.body[1])
-					relativeVelocity -= contactData.body[1]->velocity;
-				float separatingVelocity = glm::dot(relativeVelocity, contactData.contactNormal);
-
-				if (separatingVelocity > 0)
-					return;
-
-				float newSepVelocity = -separatingVelocity * contactData.restitution;
-
-				glm::vec3 accCausedVelocity = body->acceleration;
-				if (contactData.body[1])
-					accCausedVelocity -= contactData.body[1]->acceleration;
-				float accCausedSepVelocity = glm::dot(accCausedVelocity, contactData.contactNormal) * dt;
-				printf("accCausedSepVelocity: %d\n", accCausedSepVelocity);
-
-				if (accCausedSepVelocity < 0)
-				{
-					newSepVelocity += contactData.restitution * accCausedSepVelocity;
-
-					if (newSepVelocity < 0) newSepVelocity = 0;
-				}
-
-				float deltaVelocity = newSepVelocity - separatingVelocity;
-
-				float totalInverseMass = contactData.body[0]->inv_mass;
-				if (contactData.body[1]) totalInverseMass += contactData.body[1]->inv_mass;
-
-				if (totalInverseMass <= 0) return;
-
-				// Calculate the impulse to apply
-				float impulse = deltaVelocity / totalInverseMass;
-
-				// Find the amount of impulse per unit of inverse mass
-				glm::vec3 impulsePerIMass = contactData.contactNormal * impulse;
-
-				contactData.body[0]->SetVelocity(contactData.body[0]->velocity + impulsePerIMass * contactData.body[0]->inv_mass);
-
-				/*body->ApplyImpulse(newSepVelocity);
-				body->ApplyTorque(newSepVelocity);*/
+				contactList.push_back(contactData);
 			}
 		}
 	}
-}
 
-void ResolveCollision(Rigidbody2D& rigA, Rigidbody2D& rigB, float dt)
-{
-	std::shared_ptr<MyGeometry> collisionA = rigA.GetShape();
-	std::shared_ptr<MyGeometry> collisionB = rigB.GetShape();
+	for (size_t i = 0; i < contactList.size(); ++i)
+	{
+		ContactData contactData = contactList[i];
 
-	//rigB.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 normal = glm::vec3(0.0f, -1.0f, 0.0f);
-	// Calculate relative velocity
-	glm::vec3 rv = rigB.velocity - rigA.velocity;
-	// Calculate relative velocity in terms of the normal direction
-	float velAlongNormal = glm::dot(rv, normal);
-	// Do not resolve if velocities are separating
-	if (velAlongNormal > 0)
-		return;
-	
-	//指起狼方
-	rigA.restitution = 2.0f;
-	rigB.restitution = 2.0f;
+		if (!contactData.body[0])
+			continue;
 
-	// Calculate restitution
-	float e = min(rigA.restitution, rigB.restitution);
+		Rigidbody2D* body = contactData.body[0];
 
-	// Calculate impulse scalar
-	float j = -(1 + e) * velAlongNormal;
-	j /= 1 / rigA.mass + 1 / rigB.mass;
+		// separatingVelocity
+		glm::vec3 relativeVelocity = glm::vec3(0.0f);
+		if (contactData.body[1])
+		{
+			relativeVelocity = body->velocity - contactData.body[1]->velocity;
+		}
+		else
+		{
+			relativeVelocity = body->velocity;
+		}
+		float separatingVelocity = glm::dot(relativeVelocity, contactData.contactNormal);
 
-	// Apply impulse
-	glm::vec3 impulse = j * normal;
-	//rigA.ApplyImpulse(impulse);
-	//rigB.velocity += 1 / rigB.mass * impulse;
-	float mass_sum = rigA.mass + rigB.mass;
-	float ratio = rigA.mass / mass_sum;
-	rigA.velocity -= ratio * impulse;
-	ratio = rigB.mass / mass_sum;
-	rigB.velocity += ratio * impulse;
+		if (separatingVelocity > 0)
+			return;
 
-	//glm::vec3 force = glm::vec3(0, 9.8, 0);
-	//rigA.AddForce(force);
-	//printf("AddForce: (%f, %f, %f)\n", force.x, force.y, force.z);
+		float newSepVelocity = -separatingVelocity * contactData.restitution;
+
+		glm::vec3 accCausedVelocity(0);
+		if (contactData.body[1]) 
+		{
+			accCausedVelocity = body->acceleration - contactData.body[1]->acceleration;
+		}
+		else 
+		{
+			accCausedVelocity = body->acceleration;
+		}
+		float accCausedSepVelocity = glm::dot(accCausedVelocity, contactData.contactNormal) * dt;
+
+		std::printf("accCausedSepVelocity: %f\n", accCausedSepVelocity);
+
+		if (accCausedSepVelocity < 0)
+		{
+			newSepVelocity += contactData.restitution * accCausedSepVelocity;
+
+			if (newSepVelocity < 0) newSepVelocity = 0;
+		}
+
+		float deltaVelocity = newSepVelocity - separatingVelocity;
+
+		float totalInverseMass = contactData.body[0]->inv_mass;
+		if (contactData.body[1]) totalInverseMass += contactData.body[1]->inv_mass;
+
+		if (totalInverseMass <= 0) return;
+
+		// Calculate the impulse to apply
+		float impulse = deltaVelocity / totalInverseMass;
+
+		// Find the amount of impulse per unit of inverse mass
+		glm::vec3 impulsePerIMass = contactData.contactNormal * impulse;
+
+		contactData.body[0]->SetVelocity(contactData.body[0]->velocity + impulsePerIMass * contactData.body[0]->inv_mass);
+	}
 }
 
 bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData, float dt)
 {
-	GeometryType gType = body1->GetShape()->GetGeometryType();
+	GeometryType gType1 = body1->GetShape()->GetGeometryType();
 	GeometryType gType2 = body2->GetShape()->GetGeometryType();
 
 	bool flag = false;
-	if (gType == kBox && gType2 == kSphere) 
+	if (gType1 == kBox && gType2 == kSphere) 
 	{
 		flag = Collide_Sphere_Box(body2, body1, cData);
 	}
-	else if (gType == kSphere && gType2 == kBox) 
+	else if (gType1 == kSphere && gType2 == kBox) 
 	{
 		flag = Collide_Sphere_Box(body1, body2, cData);
+	}
+	else if (gType1 == kSphere && gType2 == kSphere) 
+	{
+		flag = Collide_Sphere_Sphere(body1, body2, cData);
 	}
 	else 
 	{
 		flag = Collide_AABB(body1, body2, cData);
+		flag = false;
 	}
 
 	if (flag) 
@@ -213,7 +198,7 @@ bool Collide_Sphere_Box(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cDat
 	cData.contactNormal = boxDirection;
 	cData.body[0] = sphere;
 	cData.body[1] = nullptr;
-	cData.restitution = 0.4f;
+	cData.restitution = 1.5f;
 
 	/*DebugerManager::DrawVector3((normalizeDirection * (float)cData.pentration), body2, DebugerManager::Color_Green);
 	DebugerManager::DrawPoint(cData.contactPoint, DebugerManager::Color_Green);*/
@@ -221,7 +206,80 @@ bool Collide_Sphere_Box(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cDat
 	return true;
 }
 
+bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, ContactData& cData)
+{
+	std::shared_ptr<MySphere> sphere1Shape = std::static_pointer_cast<MySphere>(sphere1->GetShape());
+	std::shared_ptr<MySphere> sphere2Shape = std::static_pointer_cast<MySphere>(sphere2->GetShape());
+
+	glm::vec3 pos1 = sphere1->transform()->GetWorldPos();
+	glm::vec3 pos2 = sphere2->transform()->GetWorldPos();
+
+	float radius1 = sphere1Shape->GetRadius();
+	float radius2 = sphere2Shape->GetRadius();
+
+	float distance = glm::distance(pos1, pos2) - (radius1 + radius2);
+
+	if (distance >= 0)
+		return false;
+
+	glm::vec3 contactNormal = glm::normalize(pos1 - pos2);
+	glm::vec3 contactPoint = contactNormal * radius1;
+
+	//DebugerManager::DrawPoint(contactPoint, DebugerManager::Color_Blue);
+	//DebugerManager::DrawLine(contactPoint , contactNormal, DebugerManager::Color_Blue);
+
+	cData.pentration = -distance;
+	cData.contactPoint = contactPoint;
+	cData.contactNormal = contactNormal;
+	cData.body[0] = sphere1;
+	cData.body[1] = sphere2;
+	cData.restitution = 1.5f;
+
+	return true;
+}
+
 bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2) 
 {
 	return false;
 }
+
+//void ResolveCollision(Rigidbody2D& rigA, Rigidbody2D& rigB, float dt)
+//{
+//	std::shared_ptr<MyGeometry> collisionA = rigA.GetShape();
+//	std::shared_ptr<MyGeometry> collisionB = rigB.GetShape();
+//
+//	//rigB.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+//	glm::vec3 normal = glm::vec3(0.0f, -1.0f, 0.0f);
+//	// Calculate relative velocity
+//	glm::vec3 rv = rigB.velocity - rigA.velocity;
+//	// Calculate relative velocity in terms of the normal direction
+//	float velAlongNormal = glm::dot(rv, normal);
+//	// Do not resolve if velocities are separating
+//	if (velAlongNormal > 0)
+//		return;
+//
+//	//指起狼方
+//	rigA.restitution = 2.0f;
+//	rigB.restitution = 2.0f;
+//
+//	// Calculate restitution
+//	float e = min(rigA.restitution, rigB.restitution);
+//
+//	// Calculate impulse scalar
+//	float j = -(1 + e) * velAlongNormal;
+//	j /= 1 / rigA.mass + 1 / rigB.mass;
+//
+//	// Apply impulse
+//	glm::vec3 impulse = j * normal;
+//	//rigA.ApplyImpulse(impulse);
+//	//rigB.velocity += 1 / rigB.mass * impulse;
+//	float mass_sum = rigA.mass + rigB.mass;
+//	float ratio = rigA.mass / mass_sum;
+//	rigA.velocity -= ratio * impulse;
+//	ratio = rigB.mass / mass_sum;
+//	rigB.velocity += ratio * impulse;
+//
+//	//glm::vec3 force = glm::vec3(0, 9.8, 0);
+//	//rigA.AddForce(force);
+//	//printf("AddForce: (%f, %f, %f)\n", force.x, force.y, force.z);
+//}

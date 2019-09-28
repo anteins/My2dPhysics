@@ -71,27 +71,32 @@ void InitWorld()
 	GraphicsManager::Init();
 	DebugerManager::Init();
 
-	//Rigidbody2D* body1 = world->CreateBox(glm::vec3(1.0f, 1.0f, 0.0f));
-	Rigidbody2D* body1 = world->CreateSphere(0.8);
-	body1->SetId(1);
-	body1->SetPosition(glm::vec3(3.0f, 7.0f, 0.0f));
-	body1->SetMass(1.0f);
-	body1->SetKinematic(false);
+	Rigidbody2D* sphere1 = world->CreateSphere(0.8);
+	sphere1->SetId(1);
+	sphere1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
+	sphere1->SetMass(1.0f);
+	sphere1->SetKinematic(false);
 
-	Rigidbody2D* body2 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
-	//Rigidbody2D* body2 = world->CreateSphere(5);
-	body2->SetId(2);
-	body2->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	body2->SetRotate(45);
-	body2->SetMass(1.0f);
-	body2->SetKinematic(true);
+	Rigidbody2D* sphere2 = world->CreateSphere(0.8);
+	sphere2->SetId(2);
+	sphere2->SetPosition(glm::vec3(-3.0f, 0.0f, 0.0f));
+	sphere2->SetMass(1.0f);
+	sphere2->SetKinematic(true);
+	sphere2->velocity = glm::vec3(3.0, 4.0, 0);
 
-	//Rigidbody2D* body3 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
-	//body3->SetId(3);
-	//body3->SetPosition(glm::vec3(0.0f, -7.0f, 0.0f));
-	//body3->SetRotate(45);
-	//body3->SetMass(1.0f);
-	//body3->SetKinematic(true);
+	//Rigidbody2D* panel = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
+	//panel->SetId(3);
+	//panel->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	//panel->SetRotate(0);
+	//panel->SetMass(1.0f);
+	//panel->SetKinematic(true);
+
+	/*Rigidbody2D* body3 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
+	body3->SetId(3);
+	body3->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	body3->SetRotate(-45);
+	body3->SetMass(1.0f);
+	body3->SetKinematic(true)*/;
 }
 
 void UpdateLogic() 
