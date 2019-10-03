@@ -18,6 +18,8 @@ public:
 	void UpdateBound();
 	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
 
+	glm::vec3 GetPoint(unsigned int index) { return glm::vec3(0); }
+
 	void GetAabb(const glm::mat4& trans,
 		glm::vec3& aabbMin,
 		glm::vec3& aabbMax) const final;

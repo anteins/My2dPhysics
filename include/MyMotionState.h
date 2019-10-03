@@ -15,8 +15,11 @@ public:
 		m_zAxis(glm::vec3(0.0, 0.0, 1.0f))
 	{}
 	
-	glm::vec4 GetLocalPos() { return m_localPosition; }
-	glm::vec4 GetWorldPos() { return m_localPosition + glm::column(m_translateMat, 3); }
+	glm::vec4 GetLocalPos() { return this->m_localPosition; }
+	glm::vec3 GetWorldPos() 
+	{ 
+		return this->m_localPosition + glm::column(this->m_translateMat, 3);
+	}
 	
 	//Æ½ÒÆ
 	void Translate(glm::vec3 posDelta)
@@ -27,7 +30,7 @@ public:
 	//Ğı×ª
 	void Rotate(float angular)
 	{
-		this->m_rotateMat = glm::rotate(this->m_rotateMat, glm::radians(angular), this->m_zAxis);
+		this->m_rotateMat = glm::rotate(glm::mat4(1), glm::radians(angular), this->m_zAxis);
 	}
 
 	glm::mat4 GetTranslateMatrix() { return this->m_translateMat; }

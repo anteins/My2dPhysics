@@ -13,7 +13,7 @@ class ContactData
 public:
 	glm::vec3 contactNormal;
 	glm::vec3 contactPoint;
-	int pentration;
+	int penetration;
 	Rigidbody2D* body[2];
 	float restitution;
 };

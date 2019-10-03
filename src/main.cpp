@@ -66,37 +66,57 @@ void InitShader()
 	ourShader->use();
 }
 
+static Rigidbody2D* rotate_panel;
 void InitWorld() 
 {
 	GraphicsManager::Init();
 	DebugerManager::Init();
 
-	Rigidbody2D* sphere1 = world->CreateSphere(0.8);
-	sphere1->SetId(1);
-	sphere1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
-	sphere1->SetMass(1.0f);
-	sphere1->SetKinematic(false);
+	//Rigidbody2D* sphere1 = world->CreateSphere(0.8);
+	//sphere1->SetId(1);
+	//sphere1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
+	//sphere1->SetMass(1.0f);
+	//sphere1->SetKinematic(false);
 
-	Rigidbody2D* sphere2 = world->CreateSphere(0.8);
-	sphere2->SetId(2);
-	sphere2->SetPosition(glm::vec3(-3.0f, 0.0f, 0.0f));
-	sphere2->SetMass(1.0f);
-	sphere2->SetKinematic(true);
-	sphere2->velocity = glm::vec3(3.0, 4.0, 0);
+	Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	box1->SetId(1);
+	box1->SetPosition(glm::vec3(-2.0f, 6.0f, 0.0f));
+	box1->SetMass(1.0f);
+	box1->SetKinematic(false);
 
-	//Rigidbody2D* panel = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
-	//panel->SetId(3);
-	//panel->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	//panel->SetRotate(0);
-	//panel->SetMass(1.0f);
-	//panel->SetKinematic(true);
+	Rigidbody2D* box2 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	box2->SetId(2);
+	box2->SetPosition(glm::vec3(1.0f, 6.0f, 0.0f));
+	box2->SetMass(1.0f);
+	box2->SetKinematic(false);
 
-	/*Rigidbody2D* body3 = world->CreateBox(glm::vec3(10.0f, 0.5f, 0.0f));
-	body3->SetId(3);
-	body3->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	body3->SetRotate(-45);
-	body3->SetMass(1.0f);
-	body3->SetKinematic(true)*/;
+	Rigidbody2D* panel1 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	panel1->SetId(3);
+	panel1->SetPosition(glm::vec3(3.0f, 5.0f, 0.0f));
+	panel1->SetRotate(17);
+	panel1->SetMass(1.0f);
+	panel1->SetKinematic(true);
+
+	Rigidbody2D* panel2 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	panel2->SetId(4);
+	panel2->SetPosition(glm::vec3(-3.0f, 2.0f, 0.0f));
+	panel2->SetRotate(-17);
+	panel2->SetMass(1.0f);
+	panel2->SetKinematic(true);
+
+	rotate_panel = world->CreateBox(glm::vec3(6.0f, 0.15f, 0.0f));
+	rotate_panel->SetId(5);
+	rotate_panel->SetPosition(glm::vec3(3.0f, -1.0f, 0.0f));
+	rotate_panel->SetRotate(35);
+	rotate_panel->SetMass(1.0f);
+	rotate_panel->SetKinematic(true);
+
+	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	panel4->SetId(6);
+	panel4->SetPosition(glm::vec3(-3.0f, -4.0f, 0.0f));
+	panel4->SetRotate(-17);
+	panel4->SetMass(1.0f);
+	panel4->SetKinematic(true);
 }
 
 void UpdateLogic() 
@@ -135,18 +155,9 @@ void Render()
 		for (auto body : world->bodyList()) 
 		{
 			body->Render(ourShader, view, projection);
-
-			if (body->GetId() == 1)
-			{
-				//glm::vec3 pos = body->transform()->GetWorldPos();
-				//DebugerManager::PrintVec3(pos, "WorldPos: ");
-				//DebugerManager::DrawPoint(pos, 5, DebugerManager::Color_Red);
-				DebugerManager::DrawBound(body, DebugerManager::Color_Red);
-			}
 		}
 
 		GraphicsManager::Render(ourShader, view, projection);
-
 		//Render Debug Info
 		DebugerManager::Draw(ourShader, view, projection);
 	}
@@ -219,6 +230,8 @@ int main(void)
 		lastFrame = currentFrame;
 		processInput(window);
 
+		UpdateLogic();
+
 		/* Physics here */
 		float current = glfwGetTime();
 		float pass = current - last;
@@ -235,9 +248,6 @@ int main(void)
 		/* Render here */
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		UpdateLogic();
-
 		Render();
 
 		/* Swap front and back buffers */

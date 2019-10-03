@@ -25,6 +25,7 @@ public:
 	float GetWidth() { return this->width; }
 	float GetHeight() { return this->height; }
 	glm::vec3 GetDirection() { return this->m_motionState->GetMatrix() *  this->m_direction;}
+	glm::vec3 GetPoint(unsigned int index);
 
 	//3rd
 	void GetAabb(const glm::mat4& trans,

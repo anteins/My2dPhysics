@@ -21,8 +21,8 @@ namespace My
 		{
 			this->m_id = 0;
 			this->m_gravity = glm::vec3(0, -9.8f, 0);
-			this->linearDamping = 0.4f;
-			this->angularDamping = 0.4f;
+			this->linearDamping = 0.8f;
+			this->angularDamping = 0.8f;
 			this->isColliding = false;
 			this->velocity = glm::vec3(0.0f);
 			this->angularAcceleration = glm::vec3(0.0f);
@@ -35,21 +35,19 @@ namespace My
 			this->m_pCollisionShape->InitShape(this->centerPos, this->m_motionState);
 		};
 
-		glm::vec3 GetPosition() 
-		{
-			return this->posWorld;
-		}
-
 		void SetPosition(glm::vec3 position) 
 		{ 
-			this->posWorld = position;
-			this->m_motionState->Translate(this->posWorld);
+			this->m_motionState->Translate(position);
 			this->m_pCollisionShape->UpdateBound();
+		}
+
+		glm::vec3 GetPosition() 
+		{
+			return this->m_motionState->GetWorldPos();
 		}
 
 		void UpdatePosition(glm::vec3 posDelta)
 		{
-			this->posWorld += posDelta;
 			this->m_motionState->Translate(posDelta);
 			this->m_pCollisionShape->UpdateBound();
 		}
@@ -76,7 +74,6 @@ namespace My
 		}
 
 		MyMotionState* transform() { return this->m_motionState; }
-
 
 		void SetVelocity(glm::vec3 velocity) { this->velocity = velocity; }
 
@@ -129,12 +126,10 @@ namespace My
 		bool isColliding;
 
 		glm::vec3 centerPos;
-		glm::vec3 posWorld;
 
 		glm::vec3 force;
 		glm::vec3 acceleration;
 		glm::vec3 velocity;
-
 
 		glm::vec3 torque;
 		glm::vec3 angularAcceleration;

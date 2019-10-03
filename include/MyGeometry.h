@@ -38,6 +38,7 @@ public:
 	virtual void InitShape(glm::vec3 centerPosition, MyMotionState* motionState) = 0;
 	virtual void UpdateBound() = 0;
 	virtual void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) = 0;
+	virtual glm::vec3 GetPoint(unsigned int index) = 0;
 
 	void SetColor(glm::vec4 color);
 
@@ -67,6 +68,7 @@ public:
 protected:
 	GeometryType m_kGeometryType;
 	float m_fMargin;
+	int m_pointCount;
 
 	glm::vec4 color;
 

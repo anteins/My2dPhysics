@@ -17,7 +17,7 @@ void DebugerManager::DrawBound(Rigidbody2D* body, const glm::vec3& color)
 	AabbBound bound = body->GetAabbBound();
 	glm::mat4 transform = body->transform()->GetMatrix();
 
-	GLfloat vertices[6];
+	/*GLfloat vertices[6];
 	vertices[0] = bound.min.x;
 	vertices[1] = bound.min.y;
 	vertices[2] = bound.min.z;
@@ -25,6 +25,10 @@ void DebugerManager::DrawBound(Rigidbody2D* body, const glm::vec3& color)
 	vertices[3] = bound.max.x;
 	vertices[4] = bound.max.y;
 	vertices[5] = bound.max.z;
+*/
+	glm::vec3 vertices[2];
+	vertices[0] = bound.min;
+	vertices[1] = bound.max;
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -91,7 +95,7 @@ void DebugerManager::DrawPoint(glm::vec3 position, const glm::vec3& color)
 	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void DebugerManager::DrawLine(const glm::vec3& to, const glm::vec3& from, const glm::vec3& color)
+void DebugerManager::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 {
 	GLfloat vertices[6];
 	vertices[0] = from.x;
@@ -130,15 +134,9 @@ void DebugerManager::DrawLine(const glm::vec3& to, const glm::vec3& from, const 
 	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void DebugerManager::DrawVector3(const glm::vec3& vec, const glm::vec3& color)
+void DebugerManager::DrawVector3(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 {
-	//DrawPoint(to, 3, color);
-	DrawLine(glm::vec3(0.0f), vec, color);
-}
-
-void DebugerManager::DrawVector3(const glm::vec3& vec, Rigidbody2D* body, const glm::vec3& color)
-{
-	DrawLine(vec, body->transform()->GetWorldPos(), Color_Red);
+	DrawLine(from, to, color);
 }
 
 void DebugerManager::Draw(MyShader* ourShader, glm::mat4 view, glm::mat4 projection)

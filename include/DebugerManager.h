@@ -31,9 +31,8 @@ public:
 	}
 
 	static void DrawPoint(glm::vec3 position, const glm::vec3& color = Color_White);
-	static void DrawLine(const glm::vec3& to, const glm::vec3& from, const glm::vec3& color = Color_White);
-	static void DrawVector3(const glm::vec3& vec, const glm::vec3& color);
-	static void DrawVector3(const glm::vec3& vec, Rigidbody2D* body, const glm::vec3& color = Color_White);
+	static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color = Color_White);
+	static void DrawVector3(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color = Color_White);
 
 	static void DrawBound(Rigidbody2D* body, const glm::vec3& color = Color_White);
 
