@@ -1,8 +1,5 @@
 #pragma once
 #include <memory>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <string>
 
 #include "MyGeometry.h"
@@ -23,17 +20,28 @@ namespace My
 			this->m_gravity = glm::vec3(0, -9.8f, 0);
 			this->linearDamping = 0.8f;
 			this->angularDamping = 0.8f;
-			this->isColliding = false;
+
 			this->velocity = glm::vec3(0.0f);
 			this->angularAcceleration = glm::vec3(0.0f);
-			this->angularVelocity = glm::vec3(0.0f);
+			this->rotation = glm::vec3(0.0f);
 			this->torque = glm::vec3(0.0f);
 
-			this->centerPos = glm::vec3(0.0f);
 			this->m_motionState = new MyMotionState();
 
-			this->m_pCollisionShape->InitShape(this->centerPos, this->m_motionState);
+			this->m_pCollisionShape->InitShape(glm::vec3(0.0f), this->m_motionState);
+
+			this->isColliding = false;
 		};
+
+		void SetId(unsigned int id) { this->m_id = id; }
+
+		const unsigned int GetId() { return this->m_id; }
+
+		void SetVelocity(glm::vec3 velocity) { this->velocity = velocity; }
+
+		glm::vec3 GetVelocity() { return this->velocity; }
+
+		void CalculateDerivedData();
 
 		void SetPosition(glm::vec3 position) 
 		{ 
@@ -46,23 +54,16 @@ namespace My
 			return this->m_motionState->GetWorldPos();
 		}
 
-		void UpdatePosition(glm::vec3 posDelta)
+		void SetRotate(glm::vec3 rotation)
 		{
-			this->m_motionState->Translate(posDelta);
+			this->rotation = rotation;
+			this->m_motionState->Rotate(rotation.z);
 			this->m_pCollisionShape->UpdateBound();
 		}
 
-		void SetRotate(float angular)
+		glm::vec3 GetRotate() 
 		{
-			this->m_motionState->Rotate(angular);
-			this->m_pCollisionShape->UpdateBound();
-		}
-
-		void UpdateRotate(float angular)
-		{
-			this->angular += angular;
-			this->m_motionState->Rotate(angular);
-			this->m_pCollisionShape->UpdateBound();
+			return this->rotation;
 		}
 
 		AabbBound GetAabbBound()
@@ -74,12 +75,6 @@ namespace My
 		}
 
 		MyMotionState* transform() { return this->m_motionState; }
-
-		void SetVelocity(glm::vec3 velocity) { this->velocity = velocity; }
-
-		void SetId(unsigned int id) {this->m_id = id;}
-
-		const unsigned int GetId() { return this->m_id; }
 
 		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
 
@@ -103,8 +98,9 @@ namespace My
 		void SetKinematic(bool isKinematic) { this->isKinematic = isKinematic; }
 		bool IsKinematic() {return isKinematic;}
 		void AddForce(glm::vec3 force);
-		void ApplyTorque(glm::vec3 impulse);
+		void AddTorque(glm::vec3 torque);
 		void ApplyImpulse(glm::vec3 impulse);
+		void ApplyTorqueImpulse(glm::vec3 impulse);
 		void CalcAllForce();
 		void Integrate(float dt);
 
@@ -112,6 +108,9 @@ namespace My
 		void SetOrientation(const double r, const double i,
 			const double j, const double k);
 		void GetOrientation(Quaternion *orientation) const;
+
+		glm::mat3 inverseInertiaTensorWorld;
+		glm::mat3 inverseInertiaTensor;
 
 		MyMotionState* m_motionState;
 
@@ -121,11 +120,8 @@ namespace My
 		float linearDamping;
 		float angularDamping;
 
-		float restitution;
 		bool isKinematic;
 		bool isColliding;
-
-		glm::vec3 centerPos;
 
 		glm::vec3 force;
 		glm::vec3 acceleration;
@@ -133,11 +129,9 @@ namespace My
 
 		glm::vec3 torque;
 		glm::vec3 angularAcceleration;
-		glm::vec3 angularVelocity;
-		float angular;
+		glm::vec3 rotation;
 
 		Quaternion orientation;
-		glm::vec3 rotation;
 
 	private:
 		unsigned int m_id;

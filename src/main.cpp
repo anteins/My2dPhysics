@@ -66,57 +66,80 @@ void InitShader()
 	ourShader->use();
 }
 
-static Rigidbody2D* rotate_panel;
-void InitWorld() 
+void Demo1() 
 {
-	GraphicsManager::Init();
-	DebugerManager::Init();
+	Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	box1->SetId(1);
+	box1->SetPosition(glm::vec3(-5.0f, 5.0f, 0.0f));
+	box1->SetRotate(glm::vec3(0, 0, 0));
+	box1->SetMass(16.0f);
+	box1->SetKinematic(false);
 
+	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(15.0f, 0.5f, 0.0f));
+	panel4->SetId(6);
+	panel4->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	panel4->SetRotate(glm::vec3(0, 0, -15));
+	panel4->SetMass(16.0f);
+	panel4->SetKinematic(true);
+}
+
+void Demo2() 
+{
 	//Rigidbody2D* sphere1 = world->CreateSphere(0.8);
 	//sphere1->SetId(1);
 	//sphere1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
 	//sphere1->SetMass(1.0f);
 	//sphere1->SetKinematic(false);
 
-	Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	/*Rigidbody2D* box1 = world->CreateBox(glm::vec3(1.0f, 1.0f, 0.0f));
 	box1->SetId(1);
-	box1->SetPosition(glm::vec3(-2.0f, 6.0f, 0.0f));
-	box1->SetMass(1.0f);
-	box1->SetKinematic(false);
+	box1->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
+	box1->SetRotate(glm::vec3(0, 0, 45));
+	box1->SetMass(16.0f);
+	box1->SetKinematic(false);*/
 
-	Rigidbody2D* box2 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	/*Rigidbody2D* box2 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
 	box2->SetId(2);
-	box2->SetPosition(glm::vec3(1.0f, 6.0f, 0.0f));
+	box2->SetPosition(glm::vec3(1.0f, 1.0f, 0.0f));
 	box2->SetMass(1.0f);
-	box2->SetKinematic(false);
+	box2->SetKinematic(false);*/
 
-	Rigidbody2D* panel1 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
-	panel1->SetId(3);
-	panel1->SetPosition(glm::vec3(3.0f, 5.0f, 0.0f));
-	panel1->SetRotate(17);
-	panel1->SetMass(1.0f);
-	panel1->SetKinematic(true);
+	//Rigidbody2D* panel1 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	//panel1->SetId(3);
+	//panel1->SetPosition(glm::vec3(3.0f, 5.0f, 0.0f));
+	//panel1->SetRotate(17);
+	//panel1->SetMass(1.0f);
+	//panel1->SetKinematic(true);
 
-	Rigidbody2D* panel2 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	/*Rigidbody2D* panel2 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
 	panel2->SetId(4);
 	panel2->SetPosition(glm::vec3(-3.0f, 2.0f, 0.0f));
 	panel2->SetRotate(-17);
 	panel2->SetMass(1.0f);
 	panel2->SetKinematic(true);
 
-	rotate_panel = world->CreateBox(glm::vec3(6.0f, 0.15f, 0.0f));
+	rotate_panel = world->CreateBox(glm::vec3(11.0f, 0.15f, 0.0f));
 	rotate_panel->SetId(5);
 	rotate_panel->SetPosition(glm::vec3(3.0f, -1.0f, 0.0f));
 	rotate_panel->SetRotate(35);
 	rotate_panel->SetMass(1.0f);
-	rotate_panel->SetKinematic(true);
+	rotate_panel->SetKinematic(true);*/
 
-	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(8.0f, 0.15f, 0.0f));
+	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(10.0f, 0.3f, 0.0f));
 	panel4->SetId(6);
-	panel4->SetPosition(glm::vec3(-3.0f, -4.0f, 0.0f));
-	panel4->SetRotate(-17);
-	panel4->SetMass(1.0f);
+	panel4->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	panel4->SetRotate(glm::vec3(0));
+	panel4->SetMass(16.0f);
 	panel4->SetKinematic(true);
+}
+
+void InitWorld() 
+{
+	GraphicsManager::Init();
+	DebugerManager::Init();
+
+	Demo1();
+	
 }
 
 void UpdateLogic() 
@@ -163,13 +186,13 @@ void Render()
 	}
 }
 
-bool pause = false;
+bool pause = true;
 void PhysicsThread()
 {
 	float last = 0.0f;
 	while (true) 
 	{
-		float current = glfwGetTime();
+		/*float current = glfwGetTime();
 		float pass = current - last;
 		if (pass > deltaTime)
 		{
@@ -179,6 +202,11 @@ void PhysicsThread()
 			}
 			
 			last = current;
+		}*/
+
+		if (!pause)
+		{
+			world->Step(0.016f);
 		}
 	}
 }
@@ -221,7 +249,6 @@ int main(void)
 
 	//thread t1(PhysicsThread);
 	float last = 0.0f;
-
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -233,7 +260,7 @@ int main(void)
 		UpdateLogic();
 
 		/* Physics here */
-		float current = glfwGetTime();
+		/*float current = glfwGetTime();
 		float pass = current - last;
 		if (pass > deltaTime)
 		{
@@ -243,6 +270,10 @@ int main(void)
 			}
 
 			last = current;
+		}*/
+		if (!pause)
+		{
+			world->Step(0.016f);
 		}
 
 		/* Render here */
@@ -265,6 +296,7 @@ int main(void)
 	return 0;
 }
 
+float last_keyon = 0;
 void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -281,16 +313,41 @@ void processInput(GLFWwindow *window)
 
 	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
 	{
+		float current = glfwGetTime();
+		if (last_keyon != 0)
+		{
+			float pass = abs(current - last_keyon);
+			//点击间隔
+			if (pass < 0.3f)
+			{
+				return;
+			}
+		}
+		last_keyon = current;
+
 		printf("F!\n");
+		
 		int i = 0;
 		for (auto body : world->bodyList())
 		{
 			//body->ApplyImpulse(glm::vec3(0.0f, random(0, 7), 0.0f));
-			body->ApplyTorque(glm::vec3(0, 0, 150));
+			body->ApplyTorqueImpulse(glm::vec3(0, 0, 150));
 			i++;
 		}
 	}
 	else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+		float current = glfwGetTime();
+		if (last_keyon != 0)
+		{
+			float pass = abs(current - last_keyon);
+			//点击间隔
+			if (pass < 0.3f)
+			{
+				return;
+			}
+		}
+		last_keyon = current;
+
 		pause = !pause;
 	}
 }

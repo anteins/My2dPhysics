@@ -37,11 +37,6 @@ Rigidbody2D* MyWorld::CreateSphere(float radius)
 
 void MyWorld::Step(float dt) 
 {
-	for (auto body : bodyList())
-	{
-		body->Integrate(dt);
-	}
-
 	std::vector<ContactData> contactList;
 	for (size_t i = 0; i < bodyList().size(); ++i)
 	{
@@ -53,8 +48,8 @@ void MyWorld::Step(float dt)
 			ContactData contactData;
 			bool shouldCollide = this->Collide(body1, body2, contactData, dt);
 
-			body1->isColliding = shouldCollide;
-			body2->isColliding = shouldCollide;
+			/*body1->isColliding = shouldCollide;
+			body2->isColliding = shouldCollide;*/
 
 			if (shouldCollide)
 			{
@@ -63,8 +58,17 @@ void MyWorld::Step(float dt)
 		}
 	}
 
-	ResolveContacts_Particle(contactList, dt);
-	ResolvePenetration_Particle(contactList, dt);
+	//Particle
+	//ResolveContacts_Particle(contactList, dt);
+	//ResolvePenetration_Particle(contactList, dt);
+
+	//RigidBody
+	ResolveContacts(contactList, dt);
+
+	for (auto body : bodyList())
+	{
+		body->Integrate(dt);
+	}
 }
 
 bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData, float dt)
@@ -88,10 +92,28 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 	else 
 	{
 		//flag = Collide_AABB(body1, body2, cData);
+
+		/*if (body1->IsKinematic()) 
+		{
+			flag = Collide_SAT(body2, body1, cData);
+		}
+		else 
+		{
+			flag = Collide_SAT(body1, body2, cData);
+		}*/
+
 		flag = Collide_SAT(body1, body2, cData);
 	}
 
 	return flag;
+}
+
+void ResolveContacts(std::vector<ContactData>& contactList, float dt)
+{
+	for (size_t i = 0; i < contactList.size(); ++i)
+	{
+		contactList[i].CalculateInternals(dt);
+	}
 }
 
 void ResolveContacts_Particle(std::vector<ContactData>& contactList, float dt)
@@ -175,28 +197,28 @@ void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt
 	{
 		ContactData contactData = contactList[i];
 
-		//printf("contactData.penetration: %d \n", contactData.penetration);
-
 		if (contactData.penetration <= 0)
-			continue;
-
-		
-
-		if (!contactData.body[0] || !contactData.body[1])
 			continue;
 
 		Rigidbody2D* body1 = contactData.body[0];
 		Rigidbody2D* body2 = contactData.body[1];
 
+		if (body2 == nullptr)
+			continue;
+
+		glm::vec3 pos_a = body1->transform()->GetWorldPos();
+		glm::vec3 pos_b = body2->transform()->GetWorldPos();
+
+		//printf("contactData.penetration: %d \n", contactData.penetration);
+
 		float totalInvMass = body1->inv_mass + body2->inv_mass;
 
-		float penetration_1 = body2->mass * totalInvMass * contactData.penetration;
-		float penetration_2 = body1->mass * totalInvMass * contactData.penetration;
-
-		glm::vec3 toVec_1 = penetration_1 * contactData.contactNormal;
-		glm::vec3 toVec_2 = -penetration_2 * contactData.contactNormal;
-
+		glm::vec3 contactNormal = glm::normalize(pos_a - pos_b);
+		glm::vec3 movement = contactNormal * contactData.penetration;
+		glm::vec3 toVec_1 = body2->mass / totalInvMass * movement;
 		body1->SetPosition(body1->GetPosition() + toVec_1);
+
+		glm::vec3 toVec_2 = body1->mass / totalInvMass * -movement;
 		body2->SetPosition(body2->GetPosition() + toVec_2);
 	}
 }
@@ -288,12 +310,6 @@ void projectPoint(glm::vec2& limit, glm::vec3 point, glm::vec3 axis)
 #define BIG_NUM 9999999
 bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 {
-	std::shared_ptr<MyBox> shape_a = std::static_pointer_cast<MyBox>(body_a->GetShape());
-	std::shared_ptr<MyBox> shape_b = std::static_pointer_cast<MyBox>(body_b->GetShape());
-
-	glm::vec3 pos_a = body_a->transform()->GetWorldPos();
-	glm::vec3 pos_b = body_b->transform()->GetWorldPos();
-
 	//test data
 	int count_a = 4;
 	int count_b = 4;
@@ -302,6 +318,10 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 	glm::mat4 transform_b = body_b->transform()->GetMatrix();
 
 	glm::vec3 overlap = glm::vec3(0);
+	overlap.z = -std::numeric_limits<float>::max();
+
+	std::shared_ptr<MyBox> shape_a = std::static_pointer_cast<MyBox>(body_a->GetShape());
+	std::shared_ptr<MyBox> shape_b = std::static_pointer_cast<MyBox>(body_b->GetShape());
 
 	// Check pionts of shape b against axis of shape a
 	for (unsigned int i = 0; i < count_a; i++) 
@@ -312,6 +332,7 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		// Get projection axis
 		glm::vec3 axis = point_a - point_b;
 		axis = glm::vec3(-axis.y, axis.x, 0);
+		axis = glm::normalize(axis);
 		glm::vec2 limit_a = glm::vec2(BIG_NUM, -BIG_NUM);
 		glm::vec2 limit_b = glm::vec2(BIG_NUM, -BIG_NUM);
 		// Project all points in shape a
@@ -328,6 +349,7 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
+
 		// No overlap found
 		if (delta >= 0)
 			return false;
@@ -335,6 +357,8 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		if (delta > overlap.z)
 			overlap = glm::vec3(axis.x, axis.y, delta);
 	}
+
+	float penetration = glm::length(overlap);
 
 	// Check pionts of shape a against axis of shape b
 	for (unsigned int i = 0; i < count_b; i++)
@@ -345,6 +369,7 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		// Get projection axis
 		glm::vec3 axis = point_a - point_b;
 		axis = glm::vec3(-axis.y, axis.x, 0);
+		axis = glm::normalize(axis);
 		glm::vec2 limit_a = glm::vec2(BIG_NUM, -BIG_NUM);
 		glm::vec2 limit_b = glm::vec2(BIG_NUM, -BIG_NUM);
 
@@ -357,6 +382,7 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
+
 		// No overlap found
 		if (delta >= 0)
 			return false;
@@ -365,64 +391,26 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			overlap = glm::vec3(axis.x, axis.y, delta);
 	}
 	
-	glm::vec3 boxDirection = shape_b->GetDirection();
-	glm::vec3 normalizeDirection = boxDirection;
+	glm::vec3 pos_a = body_a->transform()->GetWorldPos();
+	glm::vec3 pos_b = body_b->transform()->GetWorldPos();
 
 	cData.penetration = glm::length(overlap);
-	cData.contactPoint = transform_a * glm::vec4(shape_a->GetPoint(1), 1.0);
-	cData.contactNormal = glm::normalize(boxDirection);
+	printf("cData.penetration: %f\n", cData.penetration);
+	cData.contactPoint = transform_a * glm::vec4(shape_a->GetPoint(2), 1.0);
+
+	//cData.contactNormal = glm::normalize(pos_a - pos_b);
+	cData.contactNormal = glm::normalize(shape_b->GetDirection());
+
+	//DebugerManager::DrawVector3(pos_a, pos_a + cData.contactNormal);
+
 	cData.body[0] = body_a;
-	cData.body[1] = nullptr;
-	if(!body_b->IsKinematic())
+	cData.body[1] = body_b;
+	if(body_b->IsKinematic())
 	{
-		cData.body[1] = body_b;
+		cData.body[1] = nullptr;
 	}
 	
-	cData.restitution = 0.4f;
-
-	//DebugerManager::DrawPoint(cData.contactPoint);
-	//DebugerManager::DrawVector3(pos_a, pos_a + cData.contactNormal);
+	cData.restitution = 0.59f;
 
 	return true;
 }
-
-//void ResolveCollision(Rigidbody2D& rigA, Rigidbody2D& rigB, float dt)
-//{
-//	std::shared_ptr<MyGeometry> collisionA = rigA.GetShape();
-//	std::shared_ptr<MyGeometry> collisionB = rigB.GetShape();
-//
-//	//rigB.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-//	glm::vec3 normal = glm::vec3(0.0f, -1.0f, 0.0f);
-//	// Calculate relative velocity
-//	glm::vec3 rv = rigB.velocity - rigA.velocity;
-//	// Calculate relative velocity in terms of the normal direction
-//	float velAlongNormal = glm::dot(rv, normal);
-//	// Do not resolve if velocities are separating
-//	if (velAlongNormal > 0)
-//		return;
-//
-//	//»Øµ¯ÏµÊý
-//	rigA.restitution = 2.0f;
-//	rigB.restitution = 2.0f;
-//
-//	// Calculate restitution
-//	float e = min(rigA.restitution, rigB.restitution);
-//
-//	// Calculate impulse scalar
-//	float j = -(1 + e) * velAlongNormal;
-//	j /= 1 / rigA.mass + 1 / rigB.mass;
-//
-//	// Apply impulse
-//	glm::vec3 impulse = j * normal;
-//	//rigA.ApplyImpulse(impulse);
-//	//rigB.velocity += 1 / rigB.mass * impulse;
-//	float mass_sum = rigA.mass + rigB.mass;
-//	float ratio = rigA.mass / mass_sum;
-//	rigA.velocity -= ratio * impulse;
-//	ratio = rigB.mass / mass_sum;
-//	rigB.velocity += ratio * impulse;
-//
-//	//glm::vec3 force = glm::vec3(0, 9.8, 0);
-//	//rigA.AddForce(force);
-//	//printf("AddForce: (%f, %f, %f)\n", force.x, force.y, force.z);
-//}

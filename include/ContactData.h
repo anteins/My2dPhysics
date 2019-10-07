@@ -11,9 +11,20 @@ using namespace My;
 class ContactData 
 {
 public:
+	Rigidbody2D* body[2];
 	glm::vec3 contactNormal;
 	glm::vec3 contactPoint;
-	int penetration;
-	Rigidbody2D* body[2];
+
+	float penetration;
 	float restitution;
+
+	float desiredDeltaVelocity;
+
+	glm::mat3 contactToWorld;
+	glm::mat3 worldToContact;
+
+	//desiredDeltaVelocity
+
+	void CalculateInternals(float dt);
+	void CreateContactBasic();
 };

@@ -12,11 +12,6 @@ void MyGeometry::SetColor(glm::vec4 color)
 	this->color = color;
 }
 
-//void MyGeometry::UpdateRotate(glm::vec3 angularDelta)
-//{
-//	this->m_motionState->UpdateRotate(angularDelta);
-//}
-
 void MyGeometry::CalculateTemporalAabb(const glm::mat4& curTrans,
 	const glm::vec3& linvel,
 	const glm::vec3& angvel,
