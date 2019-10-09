@@ -23,8 +23,16 @@ public:
 	glm::mat3 contactToWorld;
 	glm::mat3 worldToContact;
 
+	glm::vec3 relativePosition[2];
+	glm::vec3 contactVelocity;
+
 	//desiredDeltaVelocity
 
 	void CalculateInternals(float dt);
 	void CreateContactBasic();
+	glm::vec3 CalculateLocalVelocity(unsigned int index, float dt);
+
+	void ApplyPosition(float dt);
+
+	void ApplyVelocity(float dt);
 };

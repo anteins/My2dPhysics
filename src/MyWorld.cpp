@@ -1,5 +1,5 @@
 #include <cmath>
-#include<algorithm>
+#include <algorithm>
 
 #include "MyWorld.h"
 #include "MyGeometry.h"
@@ -108,14 +108,27 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 	return flag;
 }
 
+//¸ÕÌå-Åö×²ÏìÓ¦
 void ResolveContacts(std::vector<ContactData>& contactList, float dt)
 {
+	printf("-----------------------------\n");
 	for (size_t i = 0; i < contactList.size(); ++i)
 	{
 		contactList[i].CalculateInternals(dt);
 	}
+
+	for (size_t i = 0; i < contactList.size(); ++i)
+	{
+		contactList[i].ApplyPosition(dt);
+	}
+
+	for (size_t i = 0; i < contactList.size(); ++i)
+	{
+		contactList[i].ApplyVelocity(dt);
+	}
 }
 
+//Á£×Ó-Åö×²ÏìÓ¦
 void ResolveContacts_Particle(std::vector<ContactData>& contactList, float dt)
 {
 	for (size_t i = 0; i < contactList.size(); ++i)
@@ -206,8 +219,8 @@ void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt
 		if (body2 == nullptr)
 			continue;
 
-		glm::vec3 pos_a = body1->transform()->GetWorldPos();
-		glm::vec3 pos_b = body2->transform()->GetWorldPos();
+		glm::vec3 pos_a = body1->GetPosition();
+		glm::vec3 pos_b = body2->GetPosition();
 
 		//printf("contactData.penetration: %d \n", contactData.penetration);
 
@@ -245,8 +258,8 @@ bool Collide_Sphere_Box(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cDat
 	std::shared_ptr<MySphere> sphereShape = std::static_pointer_cast<MySphere>(sphere->GetShape());
 	std::shared_ptr<MyBox> boxShape = std::static_pointer_cast<MyBox>(box->GetShape());
 
-	glm::vec3 spherePos = sphere->transform()->GetWorldPos();
-	glm::vec3 boxPos = box->transform()->GetWorldPos();
+	glm::vec3 spherePos = sphere->GetPosition();
+	glm::vec3 boxPos = box->GetPosition();
 
 	float radius = sphereShape->GetRadius();
 
@@ -274,8 +287,8 @@ bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, ContactDa
 	std::shared_ptr<MySphere> sphere1Shape = std::static_pointer_cast<MySphere>(sphere1->GetShape());
 	std::shared_ptr<MySphere> sphere2Shape = std::static_pointer_cast<MySphere>(sphere2->GetShape());
 
-	glm::vec3 pos1 = sphere1->transform()->GetWorldPos();
-	glm::vec3 pos2 = sphere2->transform()->GetWorldPos();
+	glm::vec3 pos1 = sphere1->GetPosition();
+	glm::vec3 pos2 = sphere2->GetPosition();
 
 	float radius1 = sphere1Shape->GetRadius();
 	float radius2 = sphere2Shape->GetRadius();
@@ -298,13 +311,24 @@ bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, ContactDa
 	return true;
 }
 
-void projectPoint(glm::vec2& limit, glm::vec3 point, glm::vec3 axis)
+void projectPoint(glm::vec2& limit, glm::vec3 point, glm::vec2 axis)
 {
 	// Find the dot product
 	float projection = (axis.x * point.x + axis.y * point.y) / (axis.x * axis.x + axis.y * axis.y);
 	// Get the min and max values
 	limit.x = std::min(projection, limit.x);
 	limit.y = std::max(projection, limit.y);
+}
+
+glm::vec2 getAxis(glm::vec3 point_a, glm::vec3 point_b)
+{
+	glm::vec2 axis = point_a - point_b;
+	// Make it a unit vector
+	float unit_len = std::sqrt(axis.x * axis.x + axis.y * axis.y);
+	axis.x /= unit_len;
+	axis.y /= unit_len;
+
+	return axis;
 }
 
 #define BIG_NUM 9999999
@@ -314,11 +338,10 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 	int count_a = 4;
 	int count_b = 4;
 
-	glm::mat4 transform_a = body_a->transform()->GetMatrix();
-	glm::mat4 transform_b = body_b->transform()->GetMatrix();
+	glm::mat4 transform_a = body_a->GetMatrix();
+	glm::mat4 transform_b = body_b->GetMatrix();
 
-	glm::vec3 overlap = glm::vec3(0);
-	overlap.z = -std::numeric_limits<float>::max();
+	glm::vec3 overlap = glm::vec3(0, 0, -std::numeric_limits<float>::max());
 
 	std::shared_ptr<MyBox> shape_a = std::static_pointer_cast<MyBox>(body_a->GetShape());
 	std::shared_ptr<MyBox> shape_b = std::static_pointer_cast<MyBox>(body_b->GetShape());
@@ -330,9 +353,8 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		glm::vec4 point_a = transform_a * glm::vec4(shape_a->GetPoint(i), 1.0f);
 		glm::vec4 point_b = transform_a * glm::vec4(shape_a->GetPoint((i + 1) % count_a), 1.0f);
 		// Get projection axis
-		glm::vec3 axis = point_a - point_b;
-		axis = glm::vec3(-axis.y, axis.x, 0);
-		axis = glm::normalize(axis);
+		glm::vec2 axis = getAxis(point_a, point_b);
+		axis = glm::vec2(-axis.y, axis.x);
 		glm::vec2 limit_a = glm::vec2(BIG_NUM, -BIG_NUM);
 		glm::vec2 limit_b = glm::vec2(BIG_NUM, -BIG_NUM);
 		// Project all points in shape a
@@ -349,7 +371,6 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
-
 		// No overlap found
 		if (delta >= 0)
 			return false;
@@ -358,8 +379,6 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			overlap = glm::vec3(axis.x, axis.y, delta);
 	}
 
-	float penetration = glm::length(overlap);
-
 	// Check pionts of shape a against axis of shape b
 	for (unsigned int i = 0; i < count_b; i++)
 	{
@@ -367,9 +386,8 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		glm::vec4 point_a = transform_b * glm::vec4(shape_b->GetPoint(i), 1.0f);
 		glm::vec4 point_b = transform_b * glm::vec4(shape_b->GetPoint((i + 1) % count_b), 1.0f);
 		// Get projection axis
-		glm::vec3 axis = point_a - point_b;
-		axis = glm::vec3(-axis.y, axis.x, 0);
-		axis = glm::normalize(axis);
+		glm::vec2 axis = getAxis(point_a, point_b);
+		axis = glm::vec2(-axis.y, axis.x);
 		glm::vec2 limit_a = glm::vec2(BIG_NUM, -BIG_NUM);
 		glm::vec2 limit_b = glm::vec2(BIG_NUM, -BIG_NUM);
 
@@ -382,7 +400,6 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
-
 		// No overlap found
 		if (delta >= 0)
 			return false;
@@ -391,15 +408,39 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			overlap = glm::vec3(axis.x, axis.y, delta);
 	}
 	
-	glm::vec3 pos_a = body_a->transform()->GetWorldPos();
-	glm::vec3 pos_b = body_b->transform()->GetWorldPos();
+	glm::vec3 pos_a = body_a->GetPosition();
+	glm::vec3 pos_b = body_b->GetPosition();
 
-	cData.penetration = glm::length(overlap);
-	printf("cData.penetration: %f\n", cData.penetration);
-	cData.contactPoint = transform_a * glm::vec4(shape_a->GetPoint(2), 1.0);
-
+	cData.penetration = -overlap.z;
+	cData.contactNormal = glm::vec3(-overlap.x, -overlap.y, 0);
 	//cData.contactNormal = glm::normalize(pos_a - pos_b);
-	cData.contactNormal = glm::normalize(shape_b->GetDirection());
+	//cData.contactNormal = glm::normalize(shape_b->GetDirection());
+
+	glm::vec3 point_0 = transform_a * glm::vec4(shape_a->GetPoint(0), 1.0f);
+	glm::vec3 point_1 = transform_a * glm::vec4(shape_a->GetPoint(1), 1.0f);
+	glm::vec3 point_2 = transform_a * glm::vec4(shape_a->GetPoint(2), 1.0f);
+	glm::vec3 point_3 = transform_a * glm::vec4(shape_a->GetPoint(3), 1.0f);
+
+	float minvalue = 999;
+	float tmp[4];
+	tmp[0] = glm::dot(point_0, cData.contactNormal);
+	minvalue = min(tmp[0], minvalue);
+	tmp[1] = glm::dot(point_1, cData.contactNormal);
+	minvalue = min(tmp[1], minvalue);
+	tmp[2] = glm::dot(point_2, cData.contactNormal);
+	minvalue = min(tmp[2], minvalue);
+	tmp[3] = glm::dot(point_3, cData.contactNormal);
+	minvalue = min(tmp[3], minvalue);
+	int a = 10;
+
+	for (unsigned int j = 0; j < count_a; j++) 
+	{
+		if (minvalue == tmp[j])
+		{
+			cData.contactPoint = transform_a * glm::vec4(shape_a->GetPoint(j), 1.0);
+			break;
+		}
+	}
 
 	//DebugerManager::DrawVector3(pos_a, pos_a + cData.contactNormal);
 
@@ -410,7 +451,8 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 		cData.body[1] = nullptr;
 	}
 	
-	cData.restitution = 0.59f;
+	cData.restitution = 0.4f;
 
 	return true;
 }
+

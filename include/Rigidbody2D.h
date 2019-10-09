@@ -74,13 +74,18 @@ namespace My
 			}
 		}
 
-		MyMotionState* transform() { return this->m_motionState; }
+		MyMotionState* Transform() { return this->m_motionState; }
+
+		glm::mat4 GetMatrix()
+		{
+			return this->Transform()->GetMatrix();
+		}
 
 		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
 
 		void Render(MyShader* ourShader, glm::mat4& view, glm::mat4& projection)
 		{
-			this->m_pCollisionShape->Render(ourShader, this->transform()->GetMatrix(), view, projection);
+			this->m_pCollisionShape->Render(ourShader, this->GetMatrix(), view, projection);
 		}
 
 		void SetMass(float mass) 
@@ -95,12 +100,14 @@ namespace My
 				this->inv_mass = 1 / this->mass;
 			}
 		}
+
 		void SetKinematic(bool isKinematic) { this->isKinematic = isKinematic; }
 		bool IsKinematic() {return isKinematic;}
 		void AddForce(glm::vec3 force);
 		void AddTorque(glm::vec3 torque);
 		void ApplyImpulse(glm::vec3 impulse);
 		void ApplyTorqueImpulse(glm::vec3 impulse);
+
 		void CalcAllForce();
 		void Integrate(float dt);
 
