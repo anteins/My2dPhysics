@@ -113,7 +113,7 @@ void Rigidbody2D::CalculateDerivedData()
 	_transformInertiaTensor(inverseInertiaTensorWorld,
 		orientation,
 		inverseInertiaTensor,
-		this->m_motionState->GetMatrix());
+		this->m_motionState->GetMat44());
 
 }
 

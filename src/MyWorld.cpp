@@ -12,7 +12,8 @@ using namespace std;
 
 bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
 bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
-bool Collide_Sphere_Box(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
+bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, ContactData& cData);
 bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
 
 void ResolveContacts(std::vector<ContactData>& contactList, float dt);
@@ -21,8 +22,8 @@ void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt
 
 Rigidbody2D* MyWorld::CreateBox(glm::vec3 halfExtents)
 {
-	auto boxShape = make_shared<MyBox>(glm::vec3(0.0f), halfExtents);
-	Rigidbody2D* body = new Rigidbody2D(boxShape);
+	auto shape_box = make_shared<MyBox>(glm::vec3(0.0f), halfExtents);
+	Rigidbody2D* body = new Rigidbody2D(shape_box);
 	m_bodyList.push_back(body);
 	return body;
 }
@@ -37,6 +38,11 @@ Rigidbody2D* MyWorld::CreateSphere(float radius)
 
 void MyWorld::Step(float dt) 
 {
+	for (auto body : bodyList())
+	{
+		body->Integrate(dt);
+	}
+
 	std::vector<ContactData> contactList;
 	for (size_t i = 0; i < bodyList().size(); ++i)
 	{
@@ -64,11 +70,6 @@ void MyWorld::Step(float dt)
 
 	//RigidBody
 	ResolveContacts(contactList, dt);
-
-	for (auto body : bodyList())
-	{
-		body->Integrate(dt);
-	}
 }
 
 bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData, float dt)
@@ -79,11 +80,13 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 	bool flag = false;
 	if (gType1 == kBox && gType2 == kSphere) 
 	{
-		flag = Collide_Sphere_Box(body2, body1, cData);
+		//flag = Collide_Sphere_Panel(body2, body1, cData);
+		flag = Collide_Box_Sphere(body2, body1, cData);
 	}
 	else if (gType1 == kSphere && gType2 == kBox) 
 	{
-		flag = Collide_Sphere_Box(body1, body2, cData);
+		//flag = Collide_Sphere_Panel(body1, body2, cData);
+		flag = Collide_Box_Sphere(body2, body1, cData);
 	}
 	else if (gType1 == kSphere && gType2 == kSphere) 
 	{
@@ -111,7 +114,6 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 //¸ÕÌå-Åö×²ÏìÓ¦
 void ResolveContacts(std::vector<ContactData>& contactList, float dt)
 {
-	printf("-----------------------------\n");
 	for (size_t i = 0; i < contactList.size(); ++i)
 	{
 		contactList[i].CalculateInternals(dt);
@@ -252,29 +254,88 @@ bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData)
 	return false;
 }
 
-///
-bool Collide_Sphere_Box(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cData)
+bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cData)
 {
-	std::shared_ptr<MySphere> sphereShape = std::static_pointer_cast<MySphere>(sphere->GetShape());
-	std::shared_ptr<MyBox> boxShape = std::static_pointer_cast<MyBox>(box->GetShape());
+	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
+	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
 
 	glm::vec3 spherePos = sphere->GetPosition();
 	glm::vec3 boxPos = box->GetPosition();
 
-	float radius = sphereShape->GetRadius();
+	float radius = shape_sphere->GetRadius();
 
-	glm::vec3 boxDirection = boxShape->GetDirection();
+	glm::vec3 boxDirection = shape_box->GetDirection();
 	glm::vec3 normalizeDirection = boxDirection;
 
-	//DebugerManager::DrawVector3(boxPos, boxPos + normalizeDirection, DebugerManager::Color_Green);
-
-	float ballDistance = glm::dot(spherePos, normalizeDirection) - radius - (boxShape->GetHalfExtents().y/2);
+	float ballDistance = glm::dot(spherePos, normalizeDirection) - radius - (shape_box->GetHalfExtents().y/2);
 	if (ballDistance >= 0)
 		return false;
 
 	cData.penetration = -ballDistance;
 	cData.contactPoint = spherePos - normalizeDirection * (ballDistance + radius);
 	cData.contactNormal = boxDirection;
+	cData.body[0] = sphere;
+	cData.body[1] = nullptr;
+	cData.restitution = 0.4f;
+
+	return true;
+}
+
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, ContactData& cData)
+{
+	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
+	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
+
+	// Transform the centre of the sphere into box coordinates
+	glm::vec3 centre = sphere->GetPosition();
+	glm::mat4 tmpMat = box->GetTransform().GetMat44();
+	glm::mat4 tmpMatInv = glm::inverse(tmpMat);
+	glm::vec3 relCentre = tmpMatInv * glm::vec4(centre, 1.0f);
+
+	float radius = shape_sphere->GetRadius();
+	glm::vec3 halfSize = shape_box->GetHalfExtent();
+	halfSize = glm::vec3(halfSize.x / 2, halfSize.y / 2, halfSize.z / 2);
+	bool b1 = real_abs(relCentre.x) - radius > halfSize.x;
+	bool b2 = real_abs(relCentre.y) - radius > halfSize.y;
+	bool b3 = real_abs(relCentre.z) - radius > halfSize.z;
+
+	// Early out check to see if we can exclude the contact
+	if (b1 ||b2 ||b3)
+	{
+		return false;
+	}
+
+	glm::vec3 closestPt(0, 0, 0);
+	real dist;
+
+	// Clamp each coordinate to the box.
+	dist = relCentre.x;
+	if (dist > halfSize.x) dist = halfSize.x;
+	if (dist < -halfSize.x) dist = -halfSize.x;
+	closestPt.x = dist;
+
+	dist = relCentre.y;
+	if (dist > halfSize.y) dist = halfSize.y;
+	if (dist < -halfSize.y) dist = -halfSize.y;
+	closestPt.y = dist;
+
+	dist = relCentre.z;
+	if (dist > halfSize.z) dist = halfSize.z;
+	if (dist < -halfSize.z) dist = -halfSize.z;
+	closestPt.z = dist;
+
+	// Check we're in contact
+	glm::vec3 tmp = (closestPt - relCentre);
+	dist = tmp.x * tmp.x + tmp.y * tmp.y + tmp.z * tmp.z;//squareMagnitude();
+	if (dist > radius * radius) 
+		return false;
+
+	// Compile the contact
+	glm::vec3 closestPtWorld = tmpMat * glm::vec4(closestPt, 1.0f);
+
+	cData.contactNormal = glm::normalize(centre - closestPtWorld);
+	cData.contactPoint = closestPtWorld;
+	cData.penetration = radius - real_sqrt(dist);
 	cData.body[0] = sphere;
 	cData.body[1] = nullptr;
 	cData.restitution = 0.4f;
@@ -338,8 +399,8 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 	int count_a = 4;
 	int count_b = 4;
 
-	glm::mat4 transform_a = body_a->GetMatrix();
-	glm::mat4 transform_b = body_b->GetMatrix();
+	glm::mat4 transform_a = body_a->GetMat44();
+	glm::mat4 transform_b = body_b->GetMat44();
 
 	glm::vec3 overlap = glm::vec3(0, 0, -std::numeric_limits<float>::max());
 

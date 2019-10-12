@@ -15,7 +15,7 @@ vector<DebugDrawBatchContext> DebugerManager::m_NoClearDebugDrawBatchContext = v
 void DebugerManager::DrawBound(Rigidbody2D* body, const glm::vec3& color)
 {
 	AabbBound bound = body->GetAabbBound();
-	glm::mat4 transform = body->GetMatrix();
+	glm::mat4 transform = body->GetMat44();
 
 	/*GLfloat vertices[6];
 	vertices[0] = bound.min.x;

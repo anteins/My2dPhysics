@@ -21,10 +21,11 @@ public:
 	void UpdateBound();
 	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
 
+	glm::vec3 GetHalfExtent() {return this->m_vHalfExtents;}
 	AabbBound GetBound() { return m_aabbBound; }
 	float GetWidth() { return this->width; }
 	float GetHeight() { return this->height; }
-	glm::vec3 GetDirection() { return this->m_motionState->GetMatrix() *  this->m_direction;}
+	glm::vec3 GetDirection() { return this->m_motionState->GetMat44() *  this->m_direction;}
 	glm::vec3 GetPoint(unsigned int index);
 
 	//3rd

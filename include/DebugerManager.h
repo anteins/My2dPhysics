@@ -30,7 +30,7 @@ public:
 		//m_debugShaderProgram = new MyShader("../resource/shader.vs", "../resource/shader.fs");
 	}
 
-	static void DrawPoint(glm::vec3 position, const glm::vec3& color = Color_White);
+	static void DrawPoint(glm::vec3 position, const glm::vec3& color = Color_Red);
 	static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color = Color_White);
 	static void DrawVector3(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color = Color_White);
 

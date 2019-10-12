@@ -90,7 +90,7 @@ void MyBox::Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4&
 
 void MyBox::UpdateBound()
 {
-	glm::mat4 transition = this->m_motionState->GetMatrix();
+	glm::mat4 transition = this->m_motionState->GetMat44();
 
 	glm::vec4 maxPos = m_localMin;
 	glm::vec4 minPos = m_localMax;

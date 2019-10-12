@@ -49,15 +49,23 @@ namespace My
 			this->m_pCollisionShape->UpdateBound();
 		}
 
+		MyMotionState& GetTransform() { return *this->m_motionState; }
+
 		glm::vec3 GetPosition() 
 		{
-			return this->m_motionState->GetWorldPos();
+			//GetWorldPos
+			return this->m_motionState->GetAxis(3);
+		}
+
+		glm::vec3 GetAxis(unsigned int index)
+		{
+			return this->m_motionState->GetAxis(index);
 		}
 
 		void SetRotate(glm::vec3 rotation)
 		{
 			this->rotation = rotation;
-			this->m_motionState->Rotate(rotation.z);
+			this->m_motionState->Rotate(this->rotation.z);
 			this->m_pCollisionShape->UpdateBound();
 		}
 
@@ -76,16 +84,16 @@ namespace My
 
 		MyMotionState* Transform() { return this->m_motionState; }
 
-		glm::mat4 GetMatrix()
+		glm::mat4 GetMat44()
 		{
-			return this->Transform()->GetMatrix();
+			return this->Transform()->GetMat44();
 		}
 
 		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
 
 		void Render(MyShader* ourShader, glm::mat4& view, glm::mat4& projection)
 		{
-			this->m_pCollisionShape->Render(ourShader, this->GetMatrix(), view, projection);
+			this->m_pCollisionShape->Render(ourShader, this->GetMat44(), view, projection);
 		}
 
 		void SetMass(float mass) 

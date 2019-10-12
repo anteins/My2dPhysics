@@ -68,17 +68,23 @@ void InitShader()
 
 void Demo1() 
 {
-	Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	/*Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
 	box1->SetId(1);
 	box1->SetPosition(glm::vec3(-5.0f, 2.3f, 0.0f));
 	box1->SetRotate(glm::vec3(0, 0, 0));
 	box1->SetMass(16.0f);
-	box1->SetKinematic(false);
+	box1->SetKinematic(false);*/
+
+	Rigidbody2D* sphere1 = world->CreateSphere(0.3);
+	sphere1->SetId(1);
+	sphere1->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
+	sphere1->SetMass(16.0f);
+	sphere1->SetKinematic(false);
 
 	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(15.0f, 0.5f, 0.0f));
 	panel4->SetId(6);
 	panel4->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	panel4->SetRotate(glm::vec3(0, 0, -15));
+	panel4->SetRotate(glm::vec3(0, 0, -9));
 	panel4->SetMass(16.0f);
 	panel4->SetKinematic(true);
 }
@@ -206,7 +212,7 @@ void InitWorld()
 	GraphicsManager::Init();
 	DebugerManager::Init();
 
-	Demo3();
+	Demo1();
 }
 
 void UpdateLogic() 

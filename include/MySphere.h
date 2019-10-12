@@ -28,5 +28,4 @@ public:
 
 protected:
 	float m_fRadius;
-	//float vertices[421];
 };
