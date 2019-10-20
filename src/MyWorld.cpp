@@ -10,15 +10,15 @@
 using namespace My;
 using namespace std;
 
-bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
-bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
-bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
-bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, ContactData& cData);
-bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData);
+bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
+bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
+bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData);
+bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
 
-void ResolveContacts(std::vector<ContactData>& contactList, float dt);
-void ResolveContacts_Particle(std::vector<ContactData>& contactList, float dt);
-void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt);
+void ResolveContacts(std::vector<Contact>& contactList, float dt);
+void ResolveContacts_Particle(std::vector<Contact>& contactList, float dt);
+void ResolvePenetration_Particle(std::vector<Contact>& contactList, float dt);
 
 Rigidbody2D* MyWorld::CreateBox(glm::vec3 halfExtents)
 {
@@ -43,7 +43,7 @@ void MyWorld::Step(float dt)
 		body->Integrate(dt);
 	}
 
-	std::vector<ContactData> contactList;
+	std::vector<Contact> contactList;
 	for (size_t i = 0; i < bodyList().size(); ++i)
 	{
 		for (size_t j = i + 1; j < bodyList().size(); ++j) 
@@ -51,7 +51,7 @@ void MyWorld::Step(float dt)
 			Rigidbody2D* body1 = bodyList()[i];
 			Rigidbody2D* body2 = bodyList()[j];
 
-			ContactData contactData;
+			Contact contactData;
 			bool shouldCollide = this->Collide(body1, body2, contactData, dt);
 
 			/*body1->isColliding = shouldCollide;
@@ -72,7 +72,7 @@ void MyWorld::Step(float dt)
 	ResolveContacts(contactList, dt);
 }
 
-bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData, float dt)
+bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData, float dt)
 {
 	GeometryType gType1 = body1->GetShape()->GetGeometryType();
 	GeometryType gType2 = body2->GetShape()->GetGeometryType();
@@ -95,16 +95,6 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 	else 
 	{
 		//flag = Collide_AABB(body1, body2, cData);
-
-		/*if (body1->IsKinematic()) 
-		{
-			flag = Collide_SAT(body2, body1, cData);
-		}
-		else 
-		{
-			flag = Collide_SAT(body1, body2, cData);
-		}*/
-
 		flag = Collide_SAT(body1, body2, cData);
 	}
 
@@ -112,7 +102,7 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData
 }
 
 //¸ÕÌå-Åö×²ÏìÓ¦
-void ResolveContacts(std::vector<ContactData>& contactList, float dt)
+void ResolveContacts(std::vector<Contact>& contactList, float dt)
 {
 	for (size_t i = 0; i < contactList.size(); ++i)
 	{
@@ -131,11 +121,11 @@ void ResolveContacts(std::vector<ContactData>& contactList, float dt)
 }
 
 //Á£×Ó-Åö×²ÏìÓ¦
-void ResolveContacts_Particle(std::vector<ContactData>& contactList, float dt)
+void ResolveContacts_Particle(std::vector<Contact>& contactList, float dt)
 {
 	for (size_t i = 0; i < contactList.size(); ++i)
 	{
-		ContactData contactData = contactList[i];
+		Contact contactData = contactList[i];
 
 		if (!contactData.body[0])
 			continue;
@@ -206,11 +196,11 @@ void ResolveContacts_Particle(std::vector<ContactData>& contactList, float dt)
 	}
 }
 
-void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt)
+void ResolvePenetration_Particle(std::vector<Contact>& contactList, float dt)
 {
 	for (size_t i = 0; i < contactList.size(); ++i) 
 	{
-		ContactData contactData = contactList[i];
+		Contact contactData = contactList[i];
 
 		if (contactData.penetration <= 0)
 			continue;
@@ -238,7 +228,7 @@ void ResolvePenetration_Particle(std::vector<ContactData>& contactList, float dt
 	}
 }
 
-bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData)
+bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData)
 {
 	AabbBound bound1 = body1->GetAabbBound();
 	AabbBound bound2 = body2->GetAabbBound();
@@ -254,7 +244,7 @@ bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, ContactData& cData)
 	return false;
 }
 
-bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cData)
+bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, Contact& cData)
 {
 	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
 	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
@@ -281,7 +271,7 @@ bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, ContactData& cD
 	return true;
 }
 
-bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, ContactData& cData)
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData)
 {
 	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
 	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
@@ -343,7 +333,7 @@ bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, ContactData& cDat
 	return true;
 }
 
-bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, ContactData& cData)
+bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, Contact& cData)
 {
 	std::shared_ptr<MySphere> sphere1Shape = std::static_pointer_cast<MySphere>(sphere1->GetShape());
 	std::shared_ptr<MySphere> sphere2Shape = std::static_pointer_cast<MySphere>(sphere2->GetShape());
@@ -393,7 +383,7 @@ glm::vec2 getAxis(glm::vec3 point_a, glm::vec3 point_b)
 }
 
 #define BIG_NUM 9999999
-bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
+bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, Contact& cData)
 {
 	//test data
 	int count_a = 4;
@@ -502,8 +492,6 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, ContactData& cData)
 			break;
 		}
 	}
-
-	//DebugerManager::DrawVector3(pos_a, pos_a + cData.contactNormal);
 
 	cData.body[0] = body_a;
 	cData.body[1] = body_b;
