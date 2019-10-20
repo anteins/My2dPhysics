@@ -68,25 +68,32 @@ void InitShader()
 
 void Demo1() 
 {
-	/*Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
+	Rigidbody2D* box1 = world->CreateBox(glm::vec3(0.5f, 0.5f, 0.0f));
 	box1->SetId(1);
 	box1->SetPosition(glm::vec3(-5.0f, 2.3f, 0.0f));
 	box1->SetRotate(glm::vec3(0, 0, 0));
 	box1->SetMass(16.0f);
-	box1->SetKinematic(false);*/
+	box1->SetKinematic(false);
 
-	Rigidbody2D* sphere1 = world->CreateSphere(0.3);
-	sphere1->SetId(1);
-	sphere1->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
-	sphere1->SetMass(16.0f);
-	sphere1->SetKinematic(false);
+	//Rigidbody2D* sphere1 = world->CreateSphere(0.3);
+	//sphere1->SetId(1);
+	//sphere1->SetPosition(glm::vec3(-6.0f, 2.0f, 0.0f));
+	//sphere1->SetMass(16.0f);
+	//sphere1->SetKinematic(false);
 
-	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(15.0f, 0.5f, 0.0f));
-	panel4->SetId(6);
-	panel4->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	Rigidbody2D* panel4 = world->CreateBox(glm::vec3(8.0f, 0.3f, 0.0f));
+	panel4->SetId(2);
+	panel4->SetPosition(glm::vec3(-3.0f, 0.0f, 0.0f));
 	panel4->SetRotate(glm::vec3(0, 0, -9));
 	panel4->SetMass(16.0f);
 	panel4->SetKinematic(true);
+
+	Rigidbody2D* ground = world->CreateBox(glm::vec3(20.0f, 0.3f, 0.0f));
+	ground->SetId(3);
+	ground->SetPosition(glm::vec3(0.0f, -6.0f, 0.0f));
+	ground->SetRotate(glm::vec3(0, 0, 0));
+	ground->SetMass(16.0f);
+	ground->SetKinematic(true);
 }
 
 void Demo3()

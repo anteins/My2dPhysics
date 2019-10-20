@@ -3,7 +3,7 @@
 
 using namespace My;
 
-void ContactData::CalculateInternals(float dt) 
+void Contact::CalculateInternals(float dt) 
 {
 	if (!this->body[0])
 		return;
@@ -25,7 +25,7 @@ void ContactData::CalculateInternals(float dt)
 		this->contactVelocity -= this->CalculateLocalVelocity(1, dt);
 }
 
-void ContactData::CreateContactBasic() 
+void Contact::CreateContactBasic() 
 {
 	glm::vec3 otherAxis[2];
 
@@ -54,7 +54,7 @@ void ContactData::CreateContactBasic()
 	this->worldToContact = glm::transpose(this->contactToWorld);
 }
 
-glm::vec3 ContactData::CalculateLocalVelocity(unsigned int index, float dt)
+glm::vec3 Contact::CalculateLocalVelocity(unsigned int index, float dt)
 {
 	glm::vec3 contactVelocity;
 	DebugerManager::PrintVec3(this->contactPoint, "contactPoint: ");
@@ -74,7 +74,7 @@ glm::vec3 ContactData::CalculateLocalVelocity(unsigned int index, float dt)
 	return contactVelocity;
 }
 
-void ContactData::ApplyPosition(float dt)
+void Contact::ApplyPosition(float dt)
 {
 	//相交
 	glm::vec3 tmpPos = this->body[0]->GetPosition();
@@ -82,7 +82,7 @@ void ContactData::ApplyPosition(float dt)
 	this->body[0]->SetPosition(move);
 }
 
-void ContactData::ApplyVelocity(float dt) 
+void Contact::ApplyVelocity(float dt) 
 {
 	//计算期望速度变化
 	float accCausedVelocity = glm::dot(this->body[0]->acceleration, this->contactNormal) * dt;
