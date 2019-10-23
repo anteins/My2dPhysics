@@ -16,17 +16,17 @@ public:
 		m_vHalfExtents(halfExtents),
 		m_direction(glm::vec4(0.0, 1.0, 0.0, 0.0)){};
 
-	//override
-	void InitShape(glm::vec3 centerPosition, MyMotionState* motionState);
+	//--- override ---
+	void InitShape(MyMotionState* motionState);
 	void UpdateBound();
 	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
+	glm::vec3 GetPoint(unsigned int index);
+	glm::vec3 GetLocalPoint(unsigned int index);
+	//--- override ---
 
 	glm::vec3 GetHalfExtent() {return this->m_vHalfExtents;}
 	AabbBound GetBound() { return m_aabbBound; }
-	float GetWidth() { return this->width; }
-	float GetHeight() { return this->height; }
 	glm::vec3 GetDirection() { return this->m_motionState->GetMat44() *  this->m_direction;}
-	glm::vec3 GetPoint(unsigned int index);
 
 	//3rd
 	void GetAabb(const glm::mat4& trans,
@@ -41,11 +41,7 @@ public:
 protected:
 	glm::vec3 m_vHalfExtents;
 
-	float width;
-	float height;
-
 	glm::vec4 m_direction;
-
 	AabbBound m_aabbBound;
 	glm::vec4 m_localMin;
 	glm::vec4 m_localMax;

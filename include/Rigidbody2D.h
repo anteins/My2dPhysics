@@ -20,7 +20,6 @@ namespace My
 			this->m_gravity = glm::vec3(0, -9.8f, 0);
 			this->linearDamping = 0.8f;
 			this->angularDamping = 0.8f;
-
 			this->velocity = glm::vec3(0.0f);
 			this->angularAcceleration = glm::vec3(0.0f);
 			this->rotation = glm::vec3(0.0f);
@@ -28,7 +27,7 @@ namespace My
 
 			this->m_motionState = new MyMotionState();
 
-			this->m_pCollisionShape->InitShape(glm::vec3(0.0f), this->m_motionState);
+			this->m_pCollisionShape->InitShape(this->m_motionState);
 
 			this->isColliding = false;
 		};
@@ -53,7 +52,6 @@ namespace My
 
 		glm::vec3 GetPosition() 
 		{
-			//GetWorldPos
 			return this->m_motionState->GetAxis(3);
 		}
 
@@ -64,8 +62,15 @@ namespace My
 
 		void SetRotate(glm::vec3 rotation)
 		{
-			this->rotation = rotation;
-			this->m_motionState->Rotate(this->rotation.z);
+			this->anglar = rotation;
+			this->m_motionState->Rotate(this->anglar.z);
+			this->m_pCollisionShape->UpdateBound();
+		}
+
+		void AddRotate(glm::vec3 rotation)
+		{
+			this->anglar = this->anglar + rotation;
+			this->m_motionState->Rotate(this->anglar.z);
 			this->m_pCollisionShape->UpdateBound();
 		}
 
@@ -95,6 +100,9 @@ namespace My
 		{
 			this->m_pCollisionShape->Render(ourShader, this->GetMat44(), view, projection);
 		}
+
+		void SetColor(glm::vec4 color) { this->m_pCollisionShape->SetColor(color); }
+		void SetColor() {}
 
 		void SetMass(float mass) 
 		{ 
@@ -144,6 +152,7 @@ namespace My
 
 		glm::vec3 torque;
 		glm::vec3 angularAcceleration;
+		glm::vec3 anglar;
 		glm::vec3 rotation;
 
 		Quaternion orientation;

@@ -14,11 +14,12 @@ public:
 	MySphere() = delete;
 	MySphere(glm::vec3 centerPos, float radius) : MyGeometry(GeometryType::kSphere), m_fRadius(radius){};
 
-	void InitShape(glm::vec3 centerPosition, MyMotionState* motionState);
+	void InitShape(MyMotionState* motionState);
 	void UpdateBound();
 	void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
 
 	glm::vec3 GetPoint(unsigned int index) { return glm::vec3(0); }
+	glm::vec3 GetLocalPoint(unsigned int index) { return glm::vec3(0); }
 
 	void GetAabb(const glm::mat4& trans,
 		glm::vec3& aabbMin,

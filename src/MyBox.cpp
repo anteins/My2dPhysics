@@ -13,8 +13,9 @@ void MyBox::GetAabb(const glm::mat4& trans, glm::vec3& aabbMin, glm::vec3& aabbM
 //	3 ------ 0
 //	|    A   |
 //  2 ------ 1
-void MyBox::InitShape(glm::vec3 centerPosition, MyMotionState* motionState)
+void MyBox::InitShape(MyMotionState* motionState)
 {
+	glm::vec3 centerPosition = glm::vec3(0.0f);
 	this->m_pointCount = 4;
 
 	this->m_motionState = motionState;
@@ -101,22 +102,40 @@ void MyBox::UpdateBound()
 
 glm::vec3 MyBox::GetPoint(unsigned int index) 
 {
-	////右上
-	//vertices[0] = glm::vec3(
-
-	////右下
-	//vertices[1] = glm::vec3(
-
-	////左下
-	//vertices[2] = glm::vec3(
-
-	////左上
-	//vertices[3] = glm::vec3(
-
 	float width_half = m_vHalfExtents.x / 2;
 	float height_half = m_vHalfExtents.y / 2;
 
 	if (this->m_pointCount == 4) 
+	{
+		switch (index)
+		{
+		default:
+		case 0: return glm::vec3(
+			width_half,
+			height_half,
+			0);
+		case 1: return glm::vec3(
+			width_half,
+			-height_half,
+			0);
+		case 2: return glm::vec3(
+			-width_half,
+			-height_half,
+			0);
+		case 3: return glm::vec3(
+			-width_half,
+			height_half,
+			0);
+		}
+	}
+}
+
+glm::vec3 MyBox::GetLocalPoint(unsigned int index)
+{
+	float width_half = m_vHalfExtents.x / 2;
+	float height_half = m_vHalfExtents.y / 2;
+
+	if (this->m_pointCount == 4)
 	{
 		switch (index)
 		{

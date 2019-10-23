@@ -26,15 +26,18 @@ public:
 	glm::vec3 relativePosition[2];
 	glm::vec3 contactVelocity;
 
+	void SetBodyList(Rigidbody2D* body_a, Rigidbody2D* body_b);
 	void CalculateInternals(float dt);
 	void CreateContactBasic();
 	glm::vec3 CalculateLocalVelocity(unsigned int index, float dt);
+	glm::vec3 CalculateFrictionlessImpulse(float dt);
 	void ApplyPosition(float dt);
 	void ApplyVelocity(float dt);
 };
 
-struct CollisionData
+class CollisionData
 {
+public:
 	/**
 	 * Holds the base of the collision data: the first contact
 	 * in the array. This is used so that the contact pointer (below)
@@ -53,16 +56,16 @@ struct CollisionData
 	unsigned contactCount;
 
 	/** Holds the friction value to write into any collisions. */
-	real friction;
+	float friction;
 
 	/** Holds the restitution value to write into any collisions. */
-	real restitution;
+	float restitution;
 
 	/**
 	 * Holds the collision tolerance, even uncolliding objects this
 	 * close should have collisions generated.
 	 */
-	real tolerance;
+	float tolerance;
 
 	/**
 	 * Checks if there are more contacts available in the contact

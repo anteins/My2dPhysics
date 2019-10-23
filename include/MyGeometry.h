@@ -31,14 +31,18 @@ public:
 	MyGeometry(GeometryType geometry_type):
 		m_kGeometryType(geometry_type), 
 		m_motionState(nullptr)
-	{}
+	{
+		this->color = glm::vec4(1.0f);
+	}
 	MyGeometry() = delete;
 	virtual ~MyGeometry() = default;
 
-	virtual void InitShape(glm::vec3 centerPosition, MyMotionState* motionState) = 0;
+	virtual void InitShape(MyMotionState* motionState) = 0;
 	virtual void UpdateBound() = 0;
 	virtual void Render(MyShader* ourShader, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) = 0;
+
 	virtual glm::vec3 GetPoint(unsigned int index) = 0;
+	virtual glm::vec3 GetLocalPoint(unsigned int index) = 0;
 
 	void SetColor(glm::vec4 color);
 

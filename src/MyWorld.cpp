@@ -10,13 +10,13 @@
 using namespace My;
 using namespace std;
 
-bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
+bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData* data);
 bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
 bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
 bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData);
 bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
 
-void ResolveContacts(std::vector<Contact>& contactList, float dt);
+void ResolveContacts(Contact* contacts,int numContacts,float dt);
 void ResolveContacts_Particle(std::vector<Contact>& contactList, float dt);
 void ResolvePenetration_Particle(std::vector<Contact>& contactList, float dt);
 
@@ -43,24 +43,25 @@ void MyWorld::Step(float dt)
 		body->Integrate(dt);
 	}
 
-	std::vector<Contact> contactList;
+	this->cData.reset(10);
+	this->cData.friction = 0.9f;
+	this->cData.restitution = 0.4f;
+	this->cData.tolerance = 0.1f;
+
 	for (size_t i = 0; i < bodyList().size(); ++i)
 	{
+		if (!cData.hasMoreContacts()) return;
+
 		for (size_t j = i + 1; j < bodyList().size(); ++j) 
 		{
+			if (!cData.hasMoreContacts()) return;
+
 			Rigidbody2D* body1 = bodyList()[i];
 			Rigidbody2D* body2 = bodyList()[j];
+			bool shouldCollide = this->Collide(body1, body2, this->cData, dt);
 
-			Contact contactData;
-			bool shouldCollide = this->Collide(body1, body2, contactData, dt);
-
-			/*body1->isColliding = shouldCollide;
-			body2->isColliding = shouldCollide;*/
-
-			if (shouldCollide)
-			{
-				contactList.push_back(contactData);
-			}
+			body1->isColliding = shouldCollide;
+			body2->isColliding = shouldCollide;
 		}
 	}
 
@@ -69,10 +70,14 @@ void MyWorld::Step(float dt)
 	//ResolvePenetration_Particle(contactList, dt);
 
 	//RigidBody
-	ResolveContacts(contactList, dt);
+	ResolveContacts(
+		cData.contactArray,
+		cData.contactCount,
+		dt
+	);
 }
 
-bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData, float dt)
+bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData& cData, float dt)
 {
 	GeometryType gType1 = body1->GetShape()->GetGeometryType();
 	GeometryType gType2 = body2->GetShape()->GetGeometryType();
@@ -80,43 +85,47 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData, fl
 	bool flag = false;
 	if (gType1 == kBox && gType2 == kSphere) 
 	{
-		//flag = Collide_Sphere_Panel(body2, body1, cData);
-		flag = Collide_Box_Sphere(body2, body1, cData);
+		//flag = Collide_Box_Sphere(body2, body1, cData);
 	}
 	else if (gType1 == kSphere && gType2 == kBox) 
 	{
-		//flag = Collide_Sphere_Panel(body1, body2, cData);
-		flag = Collide_Box_Sphere(body2, body1, cData);
+		//flag = Collide_Box_Sphere(body2, body1, cData);
 	}
 	else if (gType1 == kSphere && gType2 == kSphere) 
 	{
-		flag = Collide_Sphere_Sphere(body1, body2, cData);
+		//flag = Collide_Sphere_Sphere(body1, body2, cData);
 	}
 	else 
 	{
 		//flag = Collide_AABB(body1, body2, cData);
-		flag = Collide_SAT(body1, body2, cData);
+		flag = Collide_SAT(body1, body2, &cData);
 	}
 
 	return flag;
 }
 
 //刚体-碰撞响应
-void ResolveContacts(std::vector<Contact>& contactList, float dt)
+void ResolveContacts(
+	Contact* contacts, 
+	int numContacts,
+	float dt)
 {
-	for (size_t i = 0; i < contactList.size(); ++i)
+	if (numContacts == 0) return;
+
+	Contact* lastContact = contacts + numContacts;
+	for (Contact* contact = contacts; contact < lastContact; contact++)
 	{
-		contactList[i].CalculateInternals(dt);
+		contact->CalculateInternals(dt);
 	}
 
-	for (size_t i = 0; i < contactList.size(); ++i)
+	for (Contact* contact = contacts; contact < lastContact; contact++)
 	{
-		contactList[i].ApplyPosition(dt);
+		contact->ApplyPosition(dt);
 	}
 
-	for (size_t i = 0; i < contactList.size(); ++i)
+	for (Contact* contact = contacts; contact < lastContact; contact++)
 	{
-		contactList[i].ApplyVelocity(dt);
+		contact->ApplyVelocity(dt);
 	}
 }
 
@@ -161,8 +170,6 @@ void ResolveContacts_Particle(std::vector<Contact>& contactList, float dt)
 			accCausedVelocity = body1->acceleration;
 		}
 		float accCausedSepVelocity = glm::dot(accCausedVelocity, contactData.contactNormal) * dt;
-
-		//std::printf("accCausedSepVelocity: %f\n", accCausedSepVelocity);
 
 		if (accCausedSepVelocity < 0)
 		{
@@ -382,8 +389,23 @@ glm::vec2 getAxis(glm::vec3 point_a, glm::vec3 point_b)
 	return axis;
 }
 
+class DeepthInfo {
+public:
+	unsigned int index;
+	float projection;
+
+	DeepthInfo(unsigned int index, float projection) { this->index = index; this->projection = projection; }
+};
+
+
+//自定义排序函数
+bool SortByProjection(const DeepthInfo& v1, const DeepthInfo& v2)
+{
+	return v1.projection < v2.projection;//升序排列
+}
+
 #define BIG_NUM 9999999
-bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, Contact& cData)
+bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, CollisionData* cData)
 {
 	//test data
 	int count_a = 4;
@@ -392,50 +414,71 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, Contact& cData)
 	glm::mat4 transform_a = body_a->GetMat44();
 	glm::mat4 transform_b = body_b->GetMat44();
 
-	glm::vec3 overlap = glm::vec3(0, 0, -std::numeric_limits<float>::max());
+	glm::vec3 pos_a = body_a->GetPosition();
+	glm::vec3 pos_b = body_b->GetPosition();
 
 	std::shared_ptr<MyBox> shape_a = std::static_pointer_cast<MyBox>(body_a->GetShape());
 	std::shared_ptr<MyBox> shape_b = std::static_pointer_cast<MyBox>(body_b->GetShape());
 
+	glm::vec4 points_a[4];
+	points_a[0] = transform_a * glm::vec4(shape_a->GetPoint(0), 1.0f);
+	points_a[1] = transform_a * glm::vec4(shape_a->GetPoint(1), 1.0f);
+	points_a[2] = transform_a * glm::vec4(shape_a->GetPoint(2), 1.0f);
+	points_a[3] = transform_a * glm::vec4(shape_a->GetPoint(3), 1.0f);
+
+	glm::vec4 points_b[4];
+	points_b[0] = transform_b * glm::vec4(shape_b->GetPoint(0), 1.0f);
+	points_b[1] = transform_b * glm::vec4(shape_b->GetPoint(1), 1.0f);
+	points_b[2] = transform_b * glm::vec4(shape_b->GetPoint(2), 1.0f);
+	points_b[3] = transform_b * glm::vec4(shape_b->GetPoint(3), 1.0f);
+
+	glm::vec3 overlap = glm::vec3(0, 0, -std::numeric_limits<float>::max());
+
 	// Check pionts of shape b against axis of shape a
-	for (unsigned int i = 0; i < count_a; i++) 
+	//printf("=========================== AAA (%f, %f) ===========================\n", pos_a.x, pos_a.y);
+	for (unsigned int i = 0; i < count_a; i++)
 	{
 		// Get face
-		glm::vec4 point_a = transform_a * glm::vec4(shape_a->GetPoint(i), 1.0f);
-		glm::vec4 point_b = transform_a * glm::vec4(shape_a->GetPoint((i + 1) % count_a), 1.0f);
+		glm::vec4 point_a = points_a[i];
+		glm::vec4 point_b = points_a[(i + 1) % count_a];
 		// Get projection axis
 		glm::vec2 axis = getAxis(point_a, point_b);
 		axis = glm::vec2(-axis.y, axis.x);
 		glm::vec2 limit_a = glm::vec2(BIG_NUM, -BIG_NUM);
 		glm::vec2 limit_b = glm::vec2(BIG_NUM, -BIG_NUM);
 		// Project all points in shape a
-		for (unsigned int j = 0; j < count_a; j++) 
+		for (unsigned int j = 0; j < count_a; j++)
 		{
-			projectPoint(limit_a, transform_a * glm::vec4(shape_a->GetPoint(j), 1.0f), axis);
+			projectPoint(limit_a, points_a[j], axis);
 		}
-			
+
 		// Project all points in shape b
-		for (unsigned int j = 0; j < count_b; j++) 
+		for (unsigned int j = 0; j < count_b; j++)
 		{
-			projectPoint(limit_b, transform_b * glm::vec4(shape_b->GetPoint(j), 1.0f), axis);
+			projectPoint(limit_b, points_b[j], axis);
 		}
-			
+
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
+		//printf(">axis:(%f, %f), (%f, %f)  (%f, %f), delta=%f\n", axis.x, axis.y, limit_b.x, limit_b.y, limit_a.x, limit_a.y, delta);
+
 		// No overlap found
-		if (delta >= 0)
+		if (delta >= 0.0f)
 			return false;
 
-		if (delta > overlap.z)
+		if (delta > overlap.z) 
+		{
 			overlap = glm::vec3(axis.x, axis.y, delta);
+		}
 	}
 
+	//printf("=========================== BBB (%f, %f) ===========================\n", pos_b.x, pos_b.y);
 	// Check pionts of shape a against axis of shape b
 	for (unsigned int i = 0; i < count_b; i++)
 	{
 		// Get face
-		glm::vec4 point_a = transform_b * glm::vec4(shape_b->GetPoint(i), 1.0f);
-		glm::vec4 point_b = transform_b * glm::vec4(shape_b->GetPoint((i + 1) % count_b), 1.0f);
+		glm::vec4 point_a = points_b[i];
+		glm::vec4 point_b = points_b[(i + 1) % count_b];
 		// Get projection axis
 		glm::vec2 axis = getAxis(point_a, point_b);
 		axis = glm::vec2(-axis.y, axis.x);
@@ -444,64 +487,88 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, Contact& cData)
 
 		// Project all points in shape a
 		for (unsigned int j = 0; j < count_a; j++)
-			projectPoint(limit_a, transform_a * glm::vec4(shape_a->GetPoint(j), 1.0f), axis);
+			projectPoint(limit_a, points_a[j], axis);
 		// Project all points in shape b
 		for (unsigned int j = 0; j < count_b; j++)
-			projectPoint(limit_b, transform_b * glm::vec4(shape_b->GetPoint(j), 1.0f), axis);
+			projectPoint(limit_b, points_b[j], axis);
 
 		// Overlap found, find solution 
 		float delta = limit_b.x - limit_a.y;
+		//printf(">axis:(%f, %f), (%f, %f)  (%f, %f), delta=%f\n", axis.x, axis.y, limit_b.x, limit_b.y, limit_a.x, limit_a.y, delta);
+
 		// No overlap found
-		if (delta >= 0)
+		if (delta >= 0.0f)
 			return false;
 
-		if (delta > overlap.z)
-			overlap = glm::vec3(axis.x, axis.y, delta);
-	}
-	
-	glm::vec3 pos_a = body_a->GetPosition();
-	glm::vec3 pos_b = body_b->GetPosition();
-
-	cData.penetration = -overlap.z;
-	cData.contactNormal = glm::vec3(-overlap.x, -overlap.y, 0);
-	//cData.contactNormal = glm::normalize(pos_a - pos_b);
-	//cData.contactNormal = glm::normalize(shape_b->GetDirection());
-
-	glm::vec3 point_0 = transform_a * glm::vec4(shape_a->GetPoint(0), 1.0f);
-	glm::vec3 point_1 = transform_a * glm::vec4(shape_a->GetPoint(1), 1.0f);
-	glm::vec3 point_2 = transform_a * glm::vec4(shape_a->GetPoint(2), 1.0f);
-	glm::vec3 point_3 = transform_a * glm::vec4(shape_a->GetPoint(3), 1.0f);
-
-	float minvalue = 999;
-	float tmp[4];
-	tmp[0] = glm::dot(point_0, cData.contactNormal);
-	minvalue = min(tmp[0], minvalue);
-	tmp[1] = glm::dot(point_1, cData.contactNormal);
-	minvalue = min(tmp[1], minvalue);
-	tmp[2] = glm::dot(point_2, cData.contactNormal);
-	minvalue = min(tmp[2], minvalue);
-	tmp[3] = glm::dot(point_3, cData.contactNormal);
-	minvalue = min(tmp[3], minvalue);
-	int a = 10;
-
-	for (unsigned int j = 0; j < count_a; j++) 
-	{
-		if (minvalue == tmp[j])
+		if (delta > overlap.z) 
 		{
-			cData.contactPoint = transform_a * glm::vec4(shape_a->GetPoint(j), 1.0);
-			break;
+			overlap = glm::vec3(axis.x, axis.y, delta);
 		}
 	}
 
-	cData.body[0] = body_a;
-	cData.body[1] = body_b;
-	if(body_b->IsKinematic())
+	//4个顶点在表面法线上的投影
+	float offsetY = shape_b->GetHalfExtents().y / 2;
+	glm::vec3 normal = glm::vec3(-overlap.x, -overlap.y, 0);
+	std::vector<DeepthInfo> tmpList;
+	tmpList.push_back(DeepthInfo(0, glm::dot((glm::vec3)points_a[0], normal) - offsetY));
+	tmpList.push_back(DeepthInfo(1, glm::dot((glm::vec3)points_a[1], normal) - offsetY));
+	tmpList.push_back(DeepthInfo(2, glm::dot((glm::vec3)points_a[2], normal) - offsetY));
+	tmpList.push_back(DeepthInfo(3, glm::dot((glm::vec3)points_a[3], normal) - offsetY));
+	
+	std::sort(tmpList.begin(), tmpList.end(), SortByProjection);
+	//printf("point_%d: %f\n", tmpList[0].index, tmpList[0].projection);
+	//printf("point_%d: %f\n", tmpList[1].index, tmpList[1].projection);
+	//printf("point_%d: %f\n", tmpList[2].index, tmpList[2].projection);
+	//printf("point_%d: %f\n", tmpList[3].index, tmpList[3].projection);
+
+	DebugerManager::DrawVector3(body_b->GetPosition(), body_b->GetPosition() + normal);
+
+	//找出投影最小的顶点(最多两个)
+	unsigned int MAX_CONCACT_POINTS = 2;
+	unsigned int curi = 0;
+	float first_projection = 0;
+	glm::vec3 contactPoint[2];
+	for (int i = 0; i < 4; i++) 
 	{
-		cData.body[1] = nullptr;
+		if (curi >= MAX_CONCACT_POINTS)
+			break;
+
+		unsigned int index = tmpList[i].index;
+		float projection = tmpList[i].projection;
+		if (projection < 0) {
+			if (curi == 0) {
+				// first point
+				contactPoint[curi++] = points_a[index];
+				first_projection = projection;
+			}
+			else {
+				// second point
+				if (abs(projection - first_projection) <= 0.02f) {
+					contactPoint[curi++] = points_a[index];
+				}
+				else {
+					break;
+				}
+			}
+		}
+
+	}
+
+	for(int i = 0; i < curi; i++)
+	{
+		Contact* contact = cData->contacts;
+		contact->penetration = -overlap.z;
+		contact->contactNormal = normal;
+		contact->contactPoint = contactPoint[i];
+		contact->SetBodyList(body_a, body_b);
+
+		contact->restitution = cData->restitution;
+		cData->addContacts(1);
+
+		//printf("=== contactPoint: (%f, %f)\n", contact->contactPoint.x, contact->contactPoint.y);
+		DebugerManager::DrawPoint(contact->contactPoint);
 	}
 	
-	cData.restitution = 0.4f;
-
 	return true;
 }
 

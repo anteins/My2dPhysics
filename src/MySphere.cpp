@@ -10,8 +10,9 @@ void MySphere::GetAabb(const glm::mat4& trans, glm::vec3& aabbMin, glm::vec3& aa
 		aabbMin, aabbMax);*/
 }
 
-void MySphere::InitShape(glm::vec3 centerPosition, MyMotionState* motionState)
+void MySphere::InitShape(MyMotionState* motionState)
 {
+	glm::vec3 centerPosition = glm::vec3(0.0f);
 	this->m_motionState = motionState;
 
 	glm::vec3 vers2[412];

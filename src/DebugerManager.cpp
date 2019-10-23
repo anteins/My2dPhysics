@@ -92,7 +92,8 @@ void DebugerManager::DrawPoint(glm::vec3 position, const glm::vec3& color)
 	dbc.pointSize = 3;
 	dbc.color = color;
 
-	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
+	//m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
+	m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
 void DebugerManager::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
@@ -131,7 +132,8 @@ void DebugerManager::DrawLine(const glm::vec3& from, const glm::vec3& to, const 
 	dbc.count = 2;
 	dbc.color = color;
 
-	m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
+	//m_NoClearDebugDrawBatchContext.push_back(std::move(dbc));
+	m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
 void DebugerManager::DrawVector3(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
@@ -162,19 +164,19 @@ void DebugerManager::Draw(MyShader* ourShader, glm::mat4 view, glm::mat4 project
 	}
 
 	//Not Clear
-	for (auto dbc : m_NoClearDebugDrawBatchContext)
-	{
-		if (dbc.pointSize > 0)
-		{
-			glPointSize(dbc.pointSize);
-		}
+	//for (auto dbc : m_NoClearDebugDrawBatchContext)
+	//{
+	//	if (dbc.pointSize > 0)
+	//	{
+	//		glPointSize(dbc.pointSize);
+	//	}
 
-		/*PrintVec3("dbc.color: ", dbc.color);*/
-		ourShader->setVec4("vertexColor", glm::vec4(dbc.color, 1.0f));
+	//	/*PrintVec3("dbc.color: ", dbc.color);*/
+	//	ourShader->setVec4("vertexColor", glm::vec4(dbc.color, 1.0f));
 
-		glBindVertexArray(dbc.vao);
-		glDrawArrays(dbc.mode, 0x00, dbc.count); // 绘制调试信息
-	}
+	//	glBindVertexArray(dbc.vao);
+	//	glDrawArrays(dbc.mode, 0x00, dbc.count); // 绘制调试信息
+	//}
 }
 
 void DebugerManager::PrintVec3(glm::vec3 vector, const std::string& headMessage)

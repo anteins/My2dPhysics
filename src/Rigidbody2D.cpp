@@ -181,7 +181,7 @@ void Rigidbody2D::Integrate(float dt)
 
 	//Update Rotate
 	//DebugerManager::PrintVec3(this->rotation, "rotation: ");
-	this->SetRotate(this->rotation);
+	this->AddRotate(this->rotation);
 	//力矩：M = r×F，r是力臂，F是外力
 	//角加速度：a = M / I，I是转动惯量
 	this->angularAcceleration = inverseInertiaTensorWorld * this->torque;
