@@ -11,10 +11,10 @@ using namespace My;
 using namespace std;
 
 bool Collide_SAT(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData* data);
-bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
-bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
-bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData);
-bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData);
+bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData* cData);
+bool Collide_Sphere_Panel(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData* cData);
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, CollisionData* cData);
+bool Collide_Sphere_Sphere(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData* cData);
 
 void ResolveContacts(Contact* contacts,int numContacts,float dt);
 void ResolveContacts_Particle(std::vector<Contact>& contactList, float dt);
@@ -85,19 +85,19 @@ bool MyWorld::Collide(Rigidbody2D* body1, Rigidbody2D* body2, CollisionData& cDa
 	bool flag = false;
 	if (gType1 == kBox && gType2 == kSphere) 
 	{
-		//flag = Collide_Box_Sphere(body2, body1, cData);
+		flag = Collide_Box_Sphere(body1, body2, &cData);
 	}
 	else if (gType1 == kSphere && gType2 == kBox) 
 	{
-		//flag = Collide_Box_Sphere(body2, body1, cData);
+		flag = Collide_Box_Sphere(body2, body1, &cData);
 	}
 	else if (gType1 == kSphere && gType2 == kSphere) 
 	{
-		//flag = Collide_Sphere_Sphere(body1, body2, cData);
+		flag = Collide_Sphere_Sphere(body1, body2, &cData);
 	}
 	else 
 	{
-		//flag = Collide_AABB(body1, body2, cData);
+		//flag = Collide_AABB(body1, body2, &cData);
 		flag = Collide_SAT(body1, body2, &cData);
 	}
 
@@ -251,7 +251,7 @@ bool Collide_AABB(Rigidbody2D* body1, Rigidbody2D* body2, Contact& cData)
 	return false;
 }
 
-bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, Contact& cData)
+bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, CollisionData* cData)
 {
 	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
 	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
@@ -268,17 +268,19 @@ bool Collide_Sphere_Panel(Rigidbody2D* sphere, Rigidbody2D* box, Contact& cData)
 	if (ballDistance >= 0)
 		return false;
 
-	cData.penetration = -ballDistance;
-	cData.contactPoint = spherePos - normalizeDirection * (ballDistance + radius);
-	cData.contactNormal = boxDirection;
-	cData.body[0] = sphere;
-	cData.body[1] = nullptr;
-	cData.restitution = 0.4f;
+	Contact* contact = cData->contacts;
+	contact->penetration = -ballDistance;
+	contact->contactNormal = boxDirection;
+	contact->contactPoint = spherePos - normalizeDirection * (ballDistance + radius);
+	contact->SetBodyList(sphere, box);
+
+	contact->restitution = cData->restitution;
+	cData->addContacts(1);
 
 	return true;
 }
 
-bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData)
+bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, CollisionData* cData)
 {
 	std::shared_ptr<MyBox> shape_box = std::static_pointer_cast<MyBox>(box->GetShape());
 	std::shared_ptr<MySphere> shape_sphere = std::static_pointer_cast<MySphere>(sphere->GetShape());
@@ -330,17 +332,19 @@ bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, Contact& cData)
 	// Compile the contact
 	glm::vec3 closestPtWorld = tmpMat * glm::vec4(closestPt, 1.0f);
 
-	cData.contactNormal = glm::normalize(centre - closestPtWorld);
-	cData.contactPoint = closestPtWorld;
-	cData.penetration = radius - real_sqrt(dist);
-	cData.body[0] = sphere;
-	cData.body[1] = nullptr;
-	cData.restitution = 0.4f;
+	Contact* contact = cData->contacts;
+	contact->penetration = radius - real_sqrt(dist);
+	contact->contactNormal = glm::normalize(centre - closestPtWorld);
+	contact->contactPoint = closestPtWorld;
+	contact->SetBodyList(sphere, box);
+
+	contact->restitution = cData->restitution;
+	cData->addContacts(1);
 
 	return true;
 }
 
-bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, Contact& cData)
+bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, CollisionData* cData)
 {
 	std::shared_ptr<MySphere> sphere1Shape = std::static_pointer_cast<MySphere>(sphere1->GetShape());
 	std::shared_ptr<MySphere> sphere2Shape = std::static_pointer_cast<MySphere>(sphere2->GetShape());
@@ -359,12 +363,14 @@ bool Collide_Sphere_Sphere(Rigidbody2D* sphere1, Rigidbody2D* sphere2, Contact& 
 	glm::vec3 contactNormal = glm::normalize(pos1 - pos2);
 	glm::vec3 contactPoint = contactNormal * radius1;
 
-	cData.penetration = -distance;
-	cData.contactPoint = contactPoint;
-	cData.contactNormal = contactNormal;
-	cData.body[0] = sphere1;
-	cData.body[1] = sphere2;
-	cData.restitution = 0.4f;
+	Contact* contact = cData->contacts;
+	contact->penetration = -distance;
+	contact->contactNormal = contactNormal;
+	contact->contactPoint = contactPoint;
+	contact->SetBodyList(sphere1, sphere2);
+
+	contact->restitution = cData->restitution;
+	cData->addContacts(1);
 
 	return true;
 }
