@@ -18,7 +18,7 @@
 
 #include "MyConst.h"
 
-class Quaternion
+class MyQuaternion
 {
 public:
 	union {
@@ -53,13 +53,13 @@ public:
 		double data[4];
 	};
 
-	// ... other Quaternion code as before ...
+	// ... other MyQuaternion code as before ...
 
 	/**
 	 * The default constructor creates a quaternion representing
 	 * a zero rotation.
 	 */
-	Quaternion() : r(1), i(0), j(0), k(0) {}
+	MyQuaternion() : r(1), i(0), j(0), k(0) {}
 
 	/**
 	 * The explicit constructor creates a quaternion with the given
@@ -85,7 +85,7 @@ public:
 	 *
 	 * @see normalise
 	 */
-	Quaternion(const double r, const double i, const double j, const double k)
+	MyQuaternion(const double r, const double i, const double j, const double k)
 		: r(r), i(i), j(j), k(k)
 	{
 	}
@@ -117,9 +117,9 @@ public:
 	 *
 	 * @param multiplier The quaternion by which to multiply.
 	 */
-	void operator *=(const Quaternion &multiplier)
+	void operator *=(const MyQuaternion &multiplier)
 	{
-		Quaternion q = *this;
+		MyQuaternion q = *this;
 		r = q.r*multiplier.r - q.i*multiplier.i -
 			q.j*multiplier.j - q.k*multiplier.k;
 		i = q.r*multiplier.i + q.i*multiplier.r +
@@ -141,7 +141,7 @@ public:
 	 */
 	void addScaledVector(const glm::vec3& vector, double scale)
 	{
-		Quaternion q(0,
+		MyQuaternion q(0,
 			vector.x * scale,
 			vector.y * scale,
 			vector.z * scale);
@@ -154,7 +154,7 @@ public:
 
 	void rotateByVector(const glm::vec3& vector)
 	{
-		Quaternion q(0, vector.x, vector.y, vector.z);
+		MyQuaternion q(0, vector.x, vector.y, vector.z);
 		(*this) *= q;
 	}
 };

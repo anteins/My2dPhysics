@@ -127,10 +127,10 @@ namespace My
 		void CalcAllForce();
 		void Integrate(float dt);
 
-		void SetOrientation(const Quaternion &orientation);
+		void SetOrientation(const MyQuaternion &orientation);
 		void SetOrientation(const double r, const double i,
 			const double j, const double k);
-		void GetOrientation(Quaternion *orientation) const;
+		void GetOrientation(MyQuaternion *orientation) const;
 
 		glm::mat3 inverseInertiaTensorWorld;
 		glm::mat3 inverseInertiaTensor;
@@ -155,7 +155,7 @@ namespace My
 		glm::vec3 anglar;
 		glm::vec3 rotation;
 
-		Quaternion orientation;
+		MyQuaternion orientation;
 
 	private:
 		unsigned int m_id;

@@ -12,7 +12,7 @@ using namespace My;
  * automated code-generator and optimizer.
  */
 static inline void _transformInertiaTensor(glm::mat3& iitWorld,
-	const Quaternion& q,
+	const MyQuaternion& q,
 	const glm::mat3& iitBody,
 	const glm::mat4& rotmat)
 {
@@ -75,7 +75,7 @@ static inline void _transformInertiaTensor(glm::mat3& iitWorld,
 
 static inline void _calculateTransformMatrix(glm::mat4& transformMatrix,
 	const glm::vec3& position,
-	const Quaternion& orientation)
+	const MyQuaternion& orientation)
 {
 	/*transformMatrix[0] = 1 - 2 * orientation.j * orientation.j -
 		2 * orientation.k * orientation.k;
@@ -143,7 +143,7 @@ void Rigidbody2D::CalcAllForce()
 	AddForce(this->m_gravity);
 }
 
-void Rigidbody2D::SetOrientation(const Quaternion &orientation)
+void Rigidbody2D::SetOrientation(const MyQuaternion &orientation)
 {
 	Rigidbody2D::orientation = orientation;
 	Rigidbody2D::orientation.normalise();
@@ -159,7 +159,7 @@ void Rigidbody2D::SetOrientation(const double r, const double i,
 	orientation.normalise();
 }
 
-void Rigidbody2D::GetOrientation(Quaternion *orientation) const
+void Rigidbody2D::GetOrientation(MyQuaternion *orientation) const
 {
 	*orientation = Rigidbody2D::orientation;
 }
