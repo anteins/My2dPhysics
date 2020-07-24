@@ -69,7 +69,7 @@ namespace My {
 #define R_PI 3.14159f
 #else
 #define DOUBLE_PRECISION
-	typedef double real;
+	typedef float real;
 #define REAL_MAX DBL_MAX
 #define real_sqrt sqrt
 #define real_abs fabs

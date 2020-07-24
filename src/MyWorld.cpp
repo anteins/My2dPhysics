@@ -287,7 +287,7 @@ bool Collide_Box_Sphere(Rigidbody2D* box, Rigidbody2D* sphere, CollisionData* cD
 
 	// Transform the centre of the sphere into box coordinates
 	glm::vec3 centre = sphere->GetPosition();
-	glm::mat4 tmpMat = box->GetTransform().GetMat44();
+	glm::mat4 tmpMat = box->Transform()->GetMat44();
 	glm::mat4 tmpMatInv = glm::inverse(tmpMat);
 	glm::vec3 relCentre = tmpMatInv * glm::vec4(centre, 1.0f);
 
@@ -414,8 +414,8 @@ bool SortByProjection(const DeepthInfo& v1, const DeepthInfo& v2)
 bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, CollisionData* cData)
 {
 	//test data
-	int count_a = 4;
-	int count_b = 4;
+	unsigned int count_a = 4;
+	unsigned int count_b = 4;
 
 	glm::mat4 transform_a = body_a->GetMat44();
 	glm::mat4 transform_b = body_b->GetMat44();
@@ -560,7 +560,7 @@ bool Collide_SAT(Rigidbody2D* body_a, Rigidbody2D* body_b, CollisionData* cData)
 
 	}
 
-	for(int i = 0; i < curi; i++)
+	for(unsigned int i = 0; i < curi; i++)
 	{
 		Contact* contact = cData->contacts;
 		contact->penetration = -overlap.z;

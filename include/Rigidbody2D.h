@@ -24,12 +24,10 @@ namespace My
 			this->angularAcceleration = glm::vec3(0.0f);
 			this->rotation = glm::vec3(0.0f);
 			this->torque = glm::vec3(0.0f);
-
 			this->m_motionState = new MyMotionState();
-
 			this->m_pCollisionShape->InitShape(this->m_motionState);
-
 			this->isColliding = false;
+			this->inv_mass = 0;
 		};
 
 		void SetId(unsigned int id) { this->m_id = id; }
@@ -37,8 +35,6 @@ namespace My
 		const unsigned int GetId() { return this->m_id; }
 
 		void SetVelocity(glm::vec3 velocity) { this->velocity = velocity; }
-
-		glm::vec3 GetVelocity() { return this->velocity; }
 
 		void CalculateDerivedData();
 
@@ -48,17 +44,13 @@ namespace My
 			this->m_pCollisionShape->UpdateBound();
 		}
 
-		MyMotionState& GetTransform() { return *this->m_motionState; }
-
-		glm::vec3 GetPosition() 
-		{
-			return this->m_motionState->GetAxis(3);
-		}
-
-		glm::vec3 GetAxis(unsigned int index)
-		{
-			return this->m_motionState->GetAxis(index);
-		}
+		glm::vec3 GetVelocity() { return this->velocity; }
+		MyMotionState* Transform() { return this->m_motionState; }
+		glm::vec3 GetPosition() { return this->m_motionState->GetAxis(3); }
+		glm::vec3 GetRotate() { return this->rotation; }
+		glm::vec3 GetAxis(unsigned int index){ return this->m_motionState->GetAxis(index); }
+		glm::mat4 GetMat44() { return this->Transform()->GetMat44(); }
+		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
 
 		void SetRotate(glm::vec3 rotation)
 		{
@@ -74,27 +66,16 @@ namespace My
 			this->m_pCollisionShape->UpdateBound();
 		}
 
-		glm::vec3 GetRotate() 
-		{
-			return this->rotation;
-		}
-
 		AabbBound GetAabbBound()
 		{
+			AabbBound bound;
 			std::shared_ptr<MyBox> boxShape = std::static_pointer_cast<MyBox>(this->m_pCollisionShape);
-			if (boxShape) {
-				return boxShape->GetBound();
+			if (boxShape) 
+			{
+				bound = boxShape->GetBound();
 			}
+			return bound;
 		}
-
-		MyMotionState* Transform() { return this->m_motionState; }
-
-		glm::mat4 GetMat44()
-		{
-			return this->Transform()->GetMat44();
-		}
-
-		std::shared_ptr<MyGeometry> GetShape() { return m_pCollisionShape; }
 
 		void Render(MyShader* ourShader, glm::mat4& view, glm::mat4& projection)
 		{
@@ -102,7 +83,6 @@ namespace My
 		}
 
 		void SetColor(glm::vec4 color) { this->m_pCollisionShape->SetColor(color); }
-		void SetColor() {}
 
 		void SetMass(float mass) 
 		{ 

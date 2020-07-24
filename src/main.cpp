@@ -1,6 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "iostream";
+#include "iostream"
 #include <thread>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -35,7 +35,6 @@ MyShader* ourShader;
 //-----------------------------------
 // Input Var
 //-----------------------------------
-// camera
 MyCamera camera(glm::vec3(0.0f, 0.0f, 18.0f));
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -131,7 +130,7 @@ void Demo3()
 	box_4->SetMass(3.0f);
 	box_4->SetKinematic(false);
 
-	Rigidbody2D* sphere1 = world->CreateSphere(0.3);
+	Rigidbody2D* sphere1 = world->CreateSphere(0.3f);
 	sphere1->SetId(serId++);
 	sphere1->SetPosition(glm::vec3(0.5f, 4.0f, 0.0f));
 	sphere1->SetMass(16.0f);
@@ -161,7 +160,7 @@ void Demo3()
 
 void Demo2() 
 {
-	Rigidbody2D* sphere1 = world->CreateSphere(0.8);
+	Rigidbody2D* sphere1 = world->CreateSphere(0.8f);
 	sphere1->SetId(1);
 	sphere1->SetPosition(glm::vec3(0.5f, 4.0f, 0.0f));
 	sphere1->SetMass(16.0f);
@@ -204,13 +203,14 @@ void UpdateLogic()
 			else
 			{
 				//default
-				body->SetColor();
+				//body->SetColor();
 			}
 		}
 	}
 }
 
-void UpdateLaterLogic() {
+void UpdateLaterLogic() 
+{
 	if (world)
 	{
 		for (auto body : world->bodyList())
@@ -218,7 +218,6 @@ void UpdateLaterLogic() {
 			//修改颜色（标识是否碰撞）
 			if (body->isColliding)
 			{
-				int a = 10;
 			}
 		}
 	}
@@ -315,7 +314,7 @@ int main(void)
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		float currentFrame = glfwGetTime();
+		float currentFrame = (float)glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		processInput(window);
@@ -378,7 +377,7 @@ void processInput(GLFWwindow *window)
 
 	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
 	{
-		float current = glfwGetTime();
+		float current = (float)glfwGetTime();
 		if (last_keyon != 0)
 		{
 			float pass = abs(current - last_keyon);
@@ -400,8 +399,9 @@ void processInput(GLFWwindow *window)
 			i++;
 		}
 	}
-	else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-		float current = glfwGetTime();
+	else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) 
+	{
+		float current = (float)glfwGetTime();
 		if (last_keyon != 0)
 		{
 			float pass = abs(current - last_keyon);
@@ -432,16 +432,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse)
 	{
-		lastX = xpos;
-		lastY = ypos;
+		lastX = (float)xpos;
+		lastY = (float)ypos;
 		firstMouse = false;
 	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	float xoffset = (float)(xpos - lastX);
+	float yoffset = (float)(lastY - ypos); // reversed since y-coordinates go from bottom to top
 
-	lastX = xpos;
-	lastY = ypos;
+	lastX = (float)xpos;
+	lastY = (float)ypos;
 
 	camera.ProcessMouseMovement(xoffset, yoffset);
 }
@@ -450,5 +450,5 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	camera.ProcessMouseScroll(yoffset);
+	camera.ProcessMouseScroll((float)yoffset);
 }

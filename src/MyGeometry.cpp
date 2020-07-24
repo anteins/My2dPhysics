@@ -55,7 +55,7 @@ void MyGeometry::CalculateTemporalAabb(const glm::mat4& curTrans,
 	temporalAabbMax = temporalAabbMax + angularMotion3d;
 }
 
-//获取包围圆
+// 获取包围圆
 void MyGeometry::GetBoundingSphere(glm::vec3& center, float& radius) const
 {
 	glm::mat4 tran = glm::mat4(1.0f);
@@ -70,8 +70,8 @@ void MyGeometry::GetBoundingSphere(glm::vec3& center, float& radius) const
 
 float MyGeometry::GetAngularMotionDisc() const
 {
-	glm::vec3    center;
-	float       disc = 0.0f;
+	glm::vec3 center;
+	float disc = 0.0f;
 	GetBoundingSphere(center, disc);
 	disc += center.length();
 	return disc;
